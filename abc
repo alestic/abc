@@ -104,7 +104,7 @@ import os
 import re
 import signal
 import sys
-from typing import List, Dict, Optional, IO
+from typing import List, Dict, Optional, IO, Tuple
 
 import anthropic
 
@@ -123,6 +123,9 @@ LOG_FORMAT_DATE: str = '%Y-%m-%d %H:%M:%S'
 LLM_MODEL: str = "claude-3-5-sonnet-20240620"
 LLM_TEMPERATURE: float = 0.0
 LLM_MAX_TOKENS: int = 1000
+
+# System prompt
+SYSTEM_PROMPT: str = "You are an expert in bash commands. Given a description, generate the appropriate bash command(s) to accomplish the task. Provide only the command(s) without any explanation. Ensure the output can be directly copied and pasted into a terminal."
 
 def signal_handler(signum: int, frame: Optional[object]) -> None:
     print('\nprogram interrupted')
@@ -193,7 +196,7 @@ def generate_bash_command(description: str, api_key: str) -> str:
         model=LLM_MODEL,
         max_tokens=LLM_MAX_TOKENS,
         temperature=LLM_TEMPERATURE,
-        system="You are an expert in bash commands. Given a description, generate the appropriate bash command(s) to accomplish the task. Provide only the command(s) without any explanation. Ensure the output can be directly copied and pasted into a terminal.",
+        system=SYSTEM_PROMPT,
         messages=[
             {
                 "role": "user",
@@ -209,40 +212,54 @@ def generate_bash_command(description: str, api_key: str) -> str:
 
     return message.content[0].text.strip()
 
+def setup_logging(log_level: int) -> None:
+    """Set up logging configuration."""
+    logging.basicConfig(level=log_level, format=LOG_FORMAT, datefmt=LOG_FORMAT_DATE)
+
+def validate_description(description: List[str]) -> None:
+    """Validate the provided description."""
+    if not description:
+        raise ValueError("No description provided")
+
+def process_command(description: List[str], config: Dict[str, str]) -> str:
+    """Process the command description and generate bash command."""
+    description_text = " ".join(description)
+    logging.info(f"Generating bash command for: {description_text}")
+
+    if 'api_key' not in config:
+        raise ValueError("API key not found in configuration")
+
+    return generate_bash_command(description_text, config['api_key'])
+
+def initialize() -> Tuple[argparse.Namespace, Dict[str, str]]:
+    """Initialize the program by setting up signal handlers, parsing arguments, and reading config."""
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    parser: argparse.ArgumentParser = create_argument_parser()
+    args: argparse.Namespace = parser.parse_args()
+
+    setup_logging(args.log_level)
+
+    validate_description(args.description)
+
+    with args.config as config_file:
+        config_section: Dict[str, str] = get_config(config_file, args.config_section)
+
+    return args, config_section
+
 def main() -> int:
     """Main function to orchestrate the program."""
     try:
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+        args, config = initialize()
 
-        parser: argparse.ArgumentParser = create_argument_parser()
-        args: argparse.Namespace = parser.parse_args()
-
-        logging.basicConfig(level=args.log_level,
-                            format=LOG_FORMAT,
-                            datefmt='%Y-%m-%d %H:%M:%S')
-
-        if not args.description:
-            logging.error("Error: No description provided")
-            return 1
-
-        with args.config as config_file:
-            config_section: Dict[str, str] = get_config(config_file, args.config_section)
-
-        if 'api_key' not in config_section:
-            logging.error("Error: API key not found in configuration")
-            return 1
-
-        description = " ".join(args.description)
-        logging.info(f"Generating bash command for: {description}")
-
-        bash_command = generate_bash_command(description, config_section['api_key'])
+        bash_command = process_command(args.description, config)
         print(bash_command)
 
         return 0
 
-    except configparser.Error as e:
-        logging.error(f"Configuration error: {e}")
+    except (ValueError, configparser.Error) as e:
+        logging.error(f"Error: {e}")
         return 1
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")

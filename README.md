@@ -68,9 +68,15 @@ api_key = your_default_api_key_here
 api_key = your_project_specific_api_key_here
 ```
 
+## TODO
+
+- Allow user to indicate they want the commands to be run
+- Support multiple LLM models
+- Support multiple LLM providers
+
 ## Contributing
 
-Unlikely to review or incorporate pull requests, but you are welcome to fork the project and publish updates.
+Pull requests and bug reports are unlikely to be reviewed, incorporated, or fixed, but you are welcome to fork the project and publish updates.
 
 ## License
 
