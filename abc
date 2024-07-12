@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+"""
+NAME
+
+  abc - AI Bash Command
+
+SYNOPSIS
+
+  abc [OPTION]... DESCRIPTION...
+
+DESCRIPTION
+
+  abc uses an AI language model to generate bash commands based on
+  an English description provided by the user.
+
+  The program takes the entire command line (excluding options) as
+  the input description and returns bash command(s) that aim to
+  accomplish the described task.
+
+OPTIONS
+
+  -c, --config CONFIGFILE
+
+    Path to the primary configuration file. (Defaults to
+    $ABC_CONFIG or "$HOME/.abc.conf")
+
+  -s, --config-section SECTION
+
+    Specifies the configuration section to be used. (Defaults to
+    "default")
+
+  --quiet
+
+    Suppresses all output except for errors and the generated commands.
+
+  --verbose
+
+    Provides detailed information about the program's execution.
+
+  --debug
+
+    Provides debug information. Only use this when troubleshooting issues.
+
+  --version
+
+    Displays the program version and exits.
+
+ENVIRONMENT
+
+  ABC_CONFIG
+
+    Specifies the path to the configuration file. If not set, the
+    script will look for a file at '~/.abc.conf'.
+
+CONFIGURATION
+
+  This program reads configurations from a config file in the INI file
+  format. Each section should include key-value pairs.
+
+  Example configuration file:
+
+    [default]
+    api_key = your_api_key_here
+
+    [project-2]
+    api_key = another_api_key_here
+
+  The program will attempt to read the config file from the first of
+  these values provided:
+    1. `--config` command line option
+    2. $ABC_CONFIG environment variable
+    3. $HOME/.abc.conf
+
+EXAMPLES
+
+  To generate a bash command to list all PDF files in the current directory:
+
+      abc list all PDF files in the current directory
+
+  To use a specific project configuration:
+
+      abc -s project-2 "create a new directory named 'test' and cd into it"
+
+EXIT STATUS
+
+  0 - Program executed successfully
+  1 - An error occurred during execution
+
+AUTHORS
+
+  Written by Claude 3.5 Sonnet
+  Prompt crafting by Eric Hammond
+
+VERSION
+
+  2024-07-12
+
+"""
+
+import argparse
+import configparser
+import logging
+import os
+import re
+import signal
+import sys
+from typing import List, Dict, Optional, IO
+
+import anthropic
+
+VERSION: str = "2024-07-12"
+PROGRAM_NAME: str = "abc"
+
+# Config file
+DEFAULT_CONFIG_FILE: str = '~/.abc.conf'
+DEFAULT_CONFIG_SECTION: str = 'default'
+
+# Log format
+LOG_FORMAT: str = f'%(asctime)s [{PROGRAM_NAME}] [%(levelname)s] %(message)s'
+LOG_FORMAT_DATE: str = '%Y-%m-%d %H:%M:%S'
+
+# LLM Constants
+LLM_MODEL: str = "claude-3-sonnet-20240229"
+LLM_TEMPERATURE: float = 0.0
+LLM_MAX_TOKENS: int = 1000
+
+def signal_handler(signum: int, frame: Optional[object]) -> None:
+    print('\nprogram interrupted')
+    sys.exit(1)
+
+def get_command_description() -> Optional[str]:
+    """Get the first nonblank line after "NAME" in __doc__."""
+    doc: Optional[str] = __doc__
+    if doc:
+        match = re.search(r'NAME\n\s+(.+)', doc)
+        return match.group(1) if match else None
+    return None
+
+def create_argument_parser() -> argparse.ArgumentParser:
+    """Create an argument parser for command-line arguments."""
+    parser = argparse.ArgumentParser(description=get_command_description())
+    parser.add_argument('-s', '--config-section',
+                        default=DEFAULT_CONFIG_SECTION,
+                        help='Name of the configuration section to be used')
+    parser.add_argument('-c', '--config', type=argparse.FileType('r'),
+                        default=os.environ.get('ABC_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE)),
+                        help='Path to configuration file')
+    parser.add_argument('--version', action='version', version=VERSION,
+                        help='Display the program version and exit')
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--quiet', action='store_const',
+                       const=logging.ERROR, dest='log_level',
+                       help='Suppress all output except for errors and generated commands')
+    group.add_argument('--verbose', action='store_const',
+                       const=logging.INFO, dest='log_level',
+                       help='Provide detailed information about the program execution')
+    group.add_argument('--debug', action='store_const',
+                       const=logging.DEBUG, dest='log_level',
+                       help='Provide debug information, use this only when troubleshooting')
+    parser.set_defaults(log_level=logging.WARNING)
+
+    parser.add_argument('description', nargs=argparse.REMAINDER,
+                        help='English description of the desired bash command')
+    return parser
+
+def get_config(config_file: IO[str], section_name: str) -> Dict[str, str]:
+    """Read the configuration file and return the specified section configuration."""
+    config = configparser.ConfigParser()
+
+    with config_file:
+        try:
+            config.read_file(config_file)
+        except FileNotFoundError:
+            raise FileNotFoundError(f'Error: Config file "{config_file.name}" not found')
+        except configparser.Error as e:
+            raise configparser.Error(f'Error: {e}')
+
+    if not config.sections():
+        raise configparser.Error('Error: Configuration file is empty')
+    if not config.has_section(section_name):
+        raise configparser.Error(f'Error: Section "{section_name}" not found in config')
+
+    section_config: Dict[str, str] = dict(config[section_name])
+
+    return section_config
+
+def generate_bash_command(description: str, api_key: str) -> str:
+    """Generate a bash command using the LLM based on the given description."""
+    client = anthropic.Anthropic(api_key=api_key)
+
+    prompt = f"""You are an expert in bash commands. Given the following description, generate the appropriate bash command(s) to accomplish the task. Provide only the command(s) without any explanation. Ensure the output can be directly copied and pasted into a terminal.
+
+Description: {description}
+
+Bash command(s):
+"""
+
+    response = client.messages.create(
+        model=LLM_MODEL,
+        max_tokens=LLM_MAX_TOKENS,
+        temperature=LLM_TEMPERATURE,
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    return response.content[0].text.strip()
+
+def main() -> int:
+    """Main function to orchestrate the program."""
+    try:
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
+        parser: argparse.ArgumentParser = create_argument_parser()
+        args: argparse.Namespace = parser.parse_args()
+
+        logging.basicConfig(level=args.log_level,
+                            format=LOG_FORMAT,
+                            datefmt='%Y-%m-%d %H:%M:%S')
+
+        if not args.description:
+            logging.error("Error: No description provided")
+            return 1
+
+        with args.config as config_file:
+            config_section: Dict[str, str] = get_config(config_file, args.config_section)
+
+        if 'api_key' not in config_section:
+            logging.error("Error: API key not found in configuration")
+            return 1
+
+        description = " ".join(args.description)
+        logging.info(f"Generating bash command for: {description}")
+
+        bash_command = generate_bash_command(description, config_section['api_key'])
+        print(bash_command)
+
+        return 0
+
+    except configparser.Error as e:
+        logging.error(f"Configuration error: {e}")
+        return 1
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+        return 1
+
+if __name__ == '__main__':
+    sys.exit(main())
