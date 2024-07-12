@@ -120,7 +120,7 @@ LOG_FORMAT: str = f'%(asctime)s [{PROGRAM_NAME}] [%(levelname)s] %(message)s'
 LOG_FORMAT_DATE: str = '%Y-%m-%d %H:%M:%S'
 
 # LLM Constants
-LLM_MODEL: str = "claude-3-sonnet-20240229"
+LLM_MODEL: str = "claude-3-5-sonnet-20240620"
 LLM_TEMPERATURE: float = 0.0
 LLM_MAX_TOKENS: int = 1000
 
@@ -189,23 +189,25 @@ def generate_bash_command(description: str, api_key: str) -> str:
     """Generate a bash command using the LLM based on the given description."""
     client = anthropic.Anthropic(api_key=api_key)
 
-    prompt = f"""You are an expert in bash commands. Given the following description, generate the appropriate bash command(s) to accomplish the task. Provide only the command(s) without any explanation. Ensure the output can be directly copied and pasted into a terminal.
-
-Description: {description}
-
-Bash command(s):
-"""
-
-    response = client.messages.create(
+    message = client.messages.create(
         model=LLM_MODEL,
         max_tokens=LLM_MAX_TOKENS,
         temperature=LLM_TEMPERATURE,
+        system="You are an expert in bash commands. Given a description, generate the appropriate bash command(s) to accomplish the task. Provide only the command(s) without any explanation. Ensure the output can be directly copied and pasted into a terminal.",
         messages=[
-            {"role": "user", "content": prompt}
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f"Description: {description}\n\nBash command(s):"
+                    }
+                ]
+            }
         ]
     )
 
-    return response.content[0].text.strip()
+    return message.content[0].text.strip()
 
 def main() -> int:
     """Main function to orchestrate the program."""
