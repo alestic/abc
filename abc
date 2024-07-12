@@ -104,6 +104,7 @@ import os
 import re
 import signal
 import sys
+import subprocess
 from typing import List, Dict, Optional, IO, Tuple
 
 import anthropic
@@ -162,6 +163,12 @@ def create_argument_parser() -> argparse.ArgumentParser:
                        const=logging.DEBUG, dest='log_level',
                        help='Provide debug information, use this only when troubleshooting')
     parser.set_defaults(log_level=logging.WARNING)
+
+    run_group = parser.add_mutually_exclusive_group()
+    run_group.add_argument('--norun', action='store_true',
+                           help='Do not run the commands and do not prompt')
+    run_group.add_argument('--run', action='store_true',
+                           help='Run the commands without prompting [DANGEROUS!!]')
 
     parser.add_argument('description', nargs=argparse.REMAINDER,
                         help='English description of the desired bash command')
@@ -231,6 +238,29 @@ def process_command(description: List[str], config: Dict[str, str]) -> str:
 
     return generate_bash_command(description_text, config['api_key'])
 
+def run_bash_command(command: str) -> None:
+    """Run the generated bash command."""
+    try:
+        subprocess.run(command, shell=True, check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command execution failed: {e}")
+        sys.exit(1)
+
+def prompt_and_run(command: str, args: argparse.Namespace) -> None:
+    """Prompt the user to run the command and execute if confirmed."""
+    print(command)
+
+    if args.norun:
+        return
+
+    if args.run:
+        run_bash_command(command)
+        return
+
+    user_input = input("run (y/N)? ")
+    if user_input.lower() == 'y':
+        run_bash_command(command)
+
 def initialize() -> Tuple[argparse.Namespace, Dict[str, str]]:
     """Initialize the program by setting up signal handlers, parsing arguments, and reading config."""
     signal.signal(signal.SIGINT, signal_handler)
@@ -254,7 +284,7 @@ def main() -> int:
         args, config = initialize()
 
         bash_command = process_command(args.description, config)
-        print(bash_command)
+        prompt_and_run(bash_command, args)
 
         return 0
 
