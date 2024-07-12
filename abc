@@ -246,14 +246,14 @@ def run_bash_command(command: str) -> None:
         logging.error(f"Command execution failed: {e}")
         sys.exit(1)
 
-def prompt_and_run(command: str, args: argparse.Namespace) -> None:
+def prompt_and_run(command: str, norun: bool, run: bool) -> None:
     """Prompt the user to run the command and execute if confirmed."""
     print(command)
 
-    if args.norun:
+    if norun:
         return
 
-    if args.run:
+    if run:
         run_bash_command(command)
         return
 
@@ -261,7 +261,7 @@ def prompt_and_run(command: str, args: argparse.Namespace) -> None:
     if user_input.lower() == 'y':
         run_bash_command(command)
 
-def initialize() -> Tuple[argparse.Namespace, Dict[str, str]]:
+def initialize() -> Tuple[List[str], Dict[str, str], int, bool, bool]:
     """Initialize the program by setting up signal handlers, parsing arguments, and reading config."""
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -276,15 +276,17 @@ def initialize() -> Tuple[argparse.Namespace, Dict[str, str]]:
     with args.config as config_file:
         config_section: Dict[str, str] = get_config(config_file, args.config_section)
 
-    return args, config_section
+    return args.description, config_section, args.log_level, args.norun, args.run
 
 def main() -> int:
     """Main function to orchestrate the program."""
     try:
-        args, config = initialize()
+        description, config, log_level, norun, run = initialize()
 
-        bash_command = process_command(args.description, config)
-        prompt_and_run(bash_command, args)
+        setup_logging(log_level)
+
+        bash_command = process_command(description, config)
+        prompt_and_run(bash_command, norun, run)
 
         return 0
 
