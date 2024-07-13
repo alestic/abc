@@ -73,6 +73,8 @@ abc find duplicate files. separate groups of file names by blank line
 
 ```
 
+![Example usage of abc](example-01.png)
+
 ## Exit Status
 
 - 0: Program executed successfully
@@ -118,7 +120,7 @@ make build
 
 ## Contributing
 
--Pull requests and bug reports are unlikely to be reviewed, incorporated, or fixed; but you are welcome to fork the project and publish updates.
+Pull requests and bug reports are unlikely to be reviewed, incorporated, or fixed; but you are welcome to fork the project and publish updates.
 
 ## License
 
