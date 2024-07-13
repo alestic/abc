@@ -18,6 +18,10 @@ Features
 - Provides verbose and debug output options
 - Prompts user before executing generated commands
 
+## Installation
+
+For detailed installation instructions, please refer to [INSTALL.md](INSTALL.md).
+
 ## Options
 
 - `--norun`: Do not run the commands and do not prompt
