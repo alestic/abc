@@ -8,7 +8,7 @@ abc [OPTION]... DESCRIPTION...
 
 ## Description
 
-abc uses an AI language model to generate bash commands based on an English description provided by the user. The program takes the entire command line (excluding options) as the input description and returns bash command(s) that aim to accomplish the described task.
+abc uses a generative AI large language model to generate bash commands based on an English description provided by the user. The program takes the entire command line (excluding options) as the input description and returns bash command(s) that aim to accomplish the described task. The user is given the option to run the command(s).
 
 Features
 
