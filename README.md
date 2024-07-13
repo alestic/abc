@@ -73,7 +73,7 @@ abc find duplicate files. separate groups of file names by blank line
 
 ```
 
-![Example usage of abc](example-01.png)
+![Example usage of abc](example-02.png)
 
 ## Exit Status
 
