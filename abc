@@ -1,99 +1,16 @@
 #!/usr/bin/env python3
 """
-NAME
 
-  abc - AI Bash Command
+abc - AI Bash Command
 
-SYNOPSIS
+Source and documentation:
 
-  abc [OPTION]... DESCRIPTION...
+  https://github.com/alestic/abc
 
-DESCRIPTION
-
-  abc uses an AI language model to generate bash commands based on
-  an English description provided by the user.
-
-  The program takes the entire command line (excluding options) as
-  the input description and returns bash command(s) that aim to
-  accomplish the described task.
-
-OPTIONS
-
-  -c, --config CONFIGFILE
-
-    Path to the primary configuration file. (Defaults to
-    $ABC_CONFIG or "$HOME/.abc.conf")
-
-  -s, --config-section SECTION
-
-    Specifies the configuration section to be used. (Defaults to
-    "default")
-
-  --quiet
-
-    Suppresses all output except for errors and the generated commands.
-
-  --verbose
-
-    Provides detailed information about the program's execution.
-
-  --debug
-
-    Provides debug information. Only use this when troubleshooting issues.
-
-  --version
-
-    Displays the program version and exits.
-
-ENVIRONMENT
-
-  ABC_CONFIG
-
-    Specifies the path to the configuration file. If not set, the
-    script will look for a file at '~/.abc.conf'.
-
-CONFIGURATION
-
-  This program reads configurations from a config file in the INI file
-  format. Each section should include key-value pairs.
-
-  Example configuration file:
-
-    [default]
-    api_key = your_api_key_here
-
-    [project-2]
-    api_key = another_api_key_here
-
-  The program will attempt to read the config file from the first of
-  these values provided:
-    1. `--config` command line option
-    2. $ABC_CONFIG environment variable
-    3. $HOME/.abc.conf
-
-EXAMPLES
-
-  To generate a bash command to list all PDF files in the current directory:
-
-      abc list all PDF files in the current directory
-
-  To use a specific project configuration:
-
-      abc -s project-2 "create a new directory named 'test' and cd into it"
-
-EXIT STATUS
-
-  0 - Program executed successfully
-  1 - An error occurred during execution
-
-AUTHORS
+Authors:
 
   Written by Claude 3.5 Sonnet
   Prompt crafting by Eric Hammond
-
-VERSION
-
-  2024-07-12
 
 """
 
@@ -133,17 +50,9 @@ def signal_handler(signum: int, frame: Optional[object]) -> None:
     print('\nprogram interrupted')
     sys.exit(1)
 
-def get_command_description() -> Optional[str]:
-    """Get the first nonblank line after "NAME" in __doc__."""
-    doc: Optional[str] = __doc__
-    if doc:
-        match = re.search(r'NAME\n\s+(.+)', doc)
-        return match.group(1) if match else None
-    return None
-
 def create_argument_parser() -> argparse.ArgumentParser:
     """Create an argument parser for command-line arguments."""
-    parser = argparse.ArgumentParser(description=get_command_description())
+    parser = argparse.ArgumentParser(description="abc - AI Bash Command")
     parser.add_argument('-s', '--config-section',
                         default=DEFAULT_CONFIG_SECTION,
                         help='Name of the configuration section to be used')
