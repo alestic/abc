@@ -108,6 +108,7 @@ import subprocess
 from typing import List, Dict, Optional, IO, Tuple
 
 import anthropic
+from readchar import readchar
 
 VERSION: str = "2024-07-12"
 PROGRAM_NAME: str = "abc"
@@ -257,8 +258,12 @@ def prompt_and_run(command: str, norun: bool, run: bool) -> None:
         run_bash_command(command)
         return
 
-    user_input = input("run (y/N)? ")
-    if user_input.lower() == 'y':
+    sys.stdout.write("run (y/N)? ")
+    sys.stdout.flush()
+    user_input = readchar().lower()
+    print(user_input)  # Print the user's input
+
+    if user_input == 'y':
         run_bash_command(command)
 
 def initialize() -> Tuple[List[str], Dict[str, str], int, bool, bool]:
