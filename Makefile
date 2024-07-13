@@ -6,6 +6,9 @@ PYTHON := python3
 # Installation directory (should be in PATH)
 INSTALL_DIR := $(HOME)/.local/bin
 
+# Config file location
+CONFIG_FILE := $(HOME)/.abc.conf
+
 # Default target
 .DEFAULT_GOAL := help
 
@@ -30,10 +33,11 @@ install: build ## Install the abc program
 	@echo "abc has been installed to $(INSTALL_DIR)/abc"
 	@echo "Make sure $(INSTALL_DIR) is in your PATH"
 
-uninstall: ## Uninstall the ABC program
+uninstall: ## Uninstall the ABC program and remove the config file
 	@echo "Uninstalling abc..."
 	rm -f $(INSTALL_DIR)/abc
-	@echo "abc has been uninstalled"
+	rm -f $(CONFIG_FILE)
+	@echo "abc has been uninstalled and the config file has been removed"
 
 clean: ## Remove generated files
 	@echo "Cleaning up..."

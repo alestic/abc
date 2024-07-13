@@ -70,7 +70,6 @@ More complicated examples might take some trial and error to get the wording rig
 
 ```
 abc find duplicate files. separate groups of file names by blank line
-
 ```
 
 ![Example usage of abc](example-02.png)
@@ -80,43 +79,13 @@ abc find duplicate files. separate groups of file names by blank line
 - 0: Program executed successfully
 - 1: An error occurred during execution
 
-## Quick Start
-
-0. Clone the repository:
-   git@github.com:alestic/abc.git
-
-1. Set up your configuration file at `~/.abc.conf`:
-   ```ini
-   [default]
-   api_key = your_api_key_here
-   ```
-
-2. Install abc:
-   ```
-   make install
-   ```
-
-3. Run abc:
-   ```
-   abc list all PDF files in the current directory
-   ```
-
-## Requirements
-
-- Python 3.7 or higher
-- anthropic==0.31.0
-- readchar==4.0.5
-
-Dependencies can be installed using the provided `requirements.txt` file:
-
-```
-make build
-```
-
 ## TODO
 
 - Support multiple LLM models
 - Support multiple LLM providers
+- Smarter prompts
+- "please think about it step-by-step within <thinking></thinking> tags"
+- LLM evaluation of response
 
 ## Contributing
 
@@ -126,11 +95,11 @@ Pull requests and bug reports are unlikely to be reviewed, incorporated, or fixe
 
 This project is licensed under the Apache 2 License - see the [LICENSE](LICENSE) file for details.
 
-## Version
-
-Current version: 2024-07-12
-
 ## Authors
 
 Written by Claude 3.5 Sonnet
 Prompt crafting by Eric Hammond
+
+## Version
+
+Current version: 2024-07-12
