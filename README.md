@@ -8,19 +8,44 @@ abc [OPTION]... DESCRIPTION...
 
 ## Description
 
-abc uses a generative AI large language model to generate bash commands based on an English description provided by the user. The program takes the entire command line (excluding options) as the input description and returns bash command(s) that aim to accomplish the described task. The user is given the option to run the command(s).
+abc uses a generative AI large language model to generate bash commands based on an English description provided by the user. The program takes the entire command line (excluding options) as the input description and returns bash command(s) that aim to accomplish the described task.
 
-Features
+## Features
 
 - Translates natural language descriptions into bash commands
-- Configurable through a simple INI file
+- Interactive mode allows editing of generated commands before execution
+- Configurable through a simple INI config file
 - Supports multiple configuration profiles
 - Provides verbose and debug output options
-- Prompts user before executing generated commands
 
 ## Installation
 
 For detailed installation instructions, please refer to [INSTALL.md](INSTALL.md).
+
+Quick installation:
+
+```bash
+git clone https://github.com/alestic/abc.git
+cd abc
+make build install
+```
+
+After installation, you'll see instructions for enabling the interactive mode.
+
+### Using Interactive Mode
+
+Once set up, you can use `abc` as you normally would. After generating a command, you'll be presented with an editable prompt containing the generated command. You can modify the command if needed before pressing Enter to execute it.
+
+Example:
+
+```
+$ abc list all PDF files in the current directory
+$ ls *.pdf
+```
+
+In this example, you'd see `ls *.pdf` in an editable prompt, allowing you to modify it before execution.
+
+To use the original `abc` command without the interactive wrapper, you can use `command abc`.
 
 ## Options
 
@@ -70,7 +95,7 @@ abc list all PDF files in the current directory
 To use a specific project configuration and output the command without prompting:
 
 ```
-abc -s project-2 --mode norun "create a new directory named 'test' and cd into it"
+abc -s project-2 --mode norun 'create a new directory named "test" and cd into it'
 ```
 
 More complicated examples might take some trial and error to get the wording right:

@@ -16,18 +16,30 @@ This guide will walk you through the process of installing and setting up abc on
    cd abc
    ```
 
-2. Build dependencies and install in $HOME/.local/bin
+2. Build dependencies and install in $HOME/.local/bin/
 
    ```
    make build install
    ```
 
-3. Create an Anthropic API key:
+3. Add the following line to your `~/.bashrc`:
+
+```bash
+source "$HOME/.local/bin/abc_interactive.sh"
+```
+
+Then, reload your shell configuration:
+
+```bash
+source ~/.bashrc  # or ~/.zshrc if you're using Zsh
+```
+
+4. Create an Anthropic API key:
 
    https://console.anthropic.com/settings/keys
 
 
-4. Create a configuration file at `~/.abc.conf` with your API key:
+5. Create a configuration file at `~/.abc.conf` with your API key:
    ```ini
    [default]
    api_key = your_api_key_here
@@ -50,6 +62,7 @@ To update abc to the latest version, pull the latest changes from the repository
 ```
 git pull
 make build install
+source ~/.bashrc
 ```
 
 ## Uninstalling

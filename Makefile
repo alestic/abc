@@ -35,6 +35,12 @@ install: build ## Install the abc program and interactive script
 	cp abc_interactive.sh $(INSTALL_DIR)/abc_interactive.sh
 	@echo "abc_interactive.sh has been installed to $(INSTALL_DIR)/abc_interactive.sh"
 	@echo "Make sure $(INSTALL_DIR) is in your PATH"
+	@echo
+	@echo "To enable the interactive mode, add the following line to your ~/.bashrc:"
+	@echo "source \"$(INSTALL_DIR)/abc_interactive.sh\""
+	@echo
+	@echo "Then, reload your shell configuration with:"
+	@echo "source ~/.bashrc"
 
 uninstall: ## Uninstall the abc program, interactive script, and remove the config file
 	@echo "Uninstalling abc..."
