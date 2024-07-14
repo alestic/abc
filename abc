@@ -58,6 +58,10 @@ Provide only the command(s) without any explanation.
 Ensure the output can be directly copied and pasted into a terminal.
 Use {get_os_info()}-specific commands when appropriate."""
 
+def setup_logging(log_level: int) -> None:
+    """Set up logging configuration."""
+    logging.basicConfig(level=log_level, format=LOG_FORMAT, datefmt=LOG_FORMAT_DATE)
+
 def signal_handler(signum: int, frame: Optional[object]) -> None:
     print('\nprogram interrupted')
     sys.exit(1)
@@ -69,26 +73,18 @@ def setup_signal_handler() -> None:
 def create_argument_parser() -> argparse.ArgumentParser:
     """Create an argument parser for command-line arguments."""
     parser = argparse.ArgumentParser(description="abc - AI Bash Command")
-    parser.add_argument('-s', '--config-section',
-                        default=DEFAULT_CONFIG_SECTION,
-                        help='Name of the configuration section to be used')
     parser.add_argument('-c', '--config', type=argparse.FileType('r'),
                         default=os.environ.get('ABC_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE)),
                         help='Path to configuration file')
     parser.add_argument('--version', action='store_true',
                         help='Display the program version and exit')
-
     parser.add_argument('--mode', choices=['prompt', 'run', 'norun'],
                         default=None,
                         help='Mode of operation: prompt (default), run (without prompting), or norun (just show command)')
-
     parser.add_argument('--in-abc-bash-function', action='store_true',
-                        help=f'Indicate that {PROGRAM_NAME} is being run inside the {PROGRAM_NAME} bash function')
+                        help=argparse.SUPPRESS)
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('--quiet', action='store_const',
-                       const=logging.ERROR, dest='log_level',
-                       help='Suppress all output except for errors and generated commands')
     group.add_argument('--verbose', action='store_const',
                        const=logging.INFO, dest='log_level',
                        help='Provide detailed information about the program execution')
@@ -101,24 +97,78 @@ def create_argument_parser() -> argparse.ArgumentParser:
                         help='English description of the desired bash command')
     return parser
 
-def read_config_file(config_file_path: str) -> configparser.ConfigParser:
-    """Read and parse the configuration file."""
+def read_config_file(config_file_path: str) -> dict:
+    """Read and parse the configuration file, using only the first section."""
     config = configparser.ConfigParser()
     with open(config_file_path, 'r') as config_file:
         config.read_file(config_file)
-    return config
+    if len(config.sections()) == 0:
+        raise configparser.Error(f"Error: No sections found in config file '{config_file_path}'")
+    first_section = config.sections()[0]
+    return dict(config[first_section])
 
-def get_config_section(config: configparser.ConfigParser, section_name: str, config_file_path: str) -> Dict[str, str]:
-    """Get the specified configuration section."""
-    if not config.has_section(section_name):
-        raise configparser.Error(f"Error: Section '{section_name}' not found in config file '{config_file_path}'")
-    return dict(config[section_name])
+def get_args_and_config() -> Tuple[argparse.Namespace, Dict[str, str]]:
+    """Create argument parser, read config, and parse command-line arguments with default options."""
+    parser = create_argument_parser()
+    config_file_path = os.environ.get(f'{PROGRAM_NAME.upper()}_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE))
+    config = read_config_file(config_file_path)
 
-def apply_default_options(parser: argparse.ArgumentParser, config_section: Dict[str, str], cmd_line_args: List[str]) -> argparse.Namespace:
-    """Apply default options from the config section and then parse command-line arguments."""
-    default_options = shlex.split(config_section.get('default_options', ''))
+    # Apply default options from the config and then parse command-line arguments
+    default_options = shlex.split(config.get('default_options', ''))
     default_args, _ = parser.parse_known_args(default_options)
-    return parser.parse_args(args=cmd_line_args, namespace=default_args)
+    args = parser.parse_args(args=sys.argv[1:], namespace=default_args)
+
+    return args, config
+
+def handle_version_check(args: argparse.Namespace) -> None:
+    if args.version:
+        version_message = f"{PROGRAM_NAME} version {VERSION}"
+        if args.in_abc_bash_function:
+            print(f'echo "{version_message}"')
+        else:
+            print(version_message)
+        sys.exit(0)
+
+def initialize() -> Tuple[argparse.Namespace, Dict[str, str]]:
+    args, config = get_args_and_config()
+
+    setup_logging(args.log_level)
+    setup_signal_handler()
+    handle_version_check(args)
+
+    if args.in_abc_bash_function:
+        if args.mode is not None:
+            logging.error(f"Error: --mode option is not available when running {PROGRAM_NAME} as a bash function")
+            sys.exit(1)
+        args.mode = 'norun'
+
+    if args.mode is None:
+        args.mode = 'prompt'
+
+    return args, config
+
+def validate_description(description: List[str]) -> None:
+    """Validate the provided description."""
+    if not description:
+        raise ValueError("No description provided")
+
+def process_command(description: List[str], config: Dict[str, str]) -> str:
+    """Process the command description and generate bash command."""
+    description_text = " ".join(description)
+    logging.info(f"Generating bash command for: {description_text}")
+
+    if 'api_key' not in config:
+        raise ValueError("API key not found in configuration")
+
+    return generate_bash_command(description_text, config['api_key'])
+
+def run_bash_command(command: str) -> None:
+    """Run the generated bash command."""
+    try:
+        subprocess.run(command, shell=True, check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command execution failed: {e}")
+        sys.exit(1)
 
 def generate_bash_command(description: str, api_key: str) -> str:
     """Generate a bash command using the LLM based on the given description."""
@@ -144,33 +194,6 @@ def generate_bash_command(description: str, api_key: str) -> str:
 
     return message.content[0].text.strip()
 
-def setup_logging(log_level: int) -> None:
-    """Set up logging configuration."""
-    logging.basicConfig(level=log_level, format=LOG_FORMAT, datefmt=LOG_FORMAT_DATE)
-
-def validate_description(description: List[str]) -> None:
-    """Validate the provided description."""
-    if not description:
-        raise ValueError("No description provided")
-
-def process_command(description: List[str], config: Dict[str, str]) -> str:
-    """Process the command description and generate bash command."""
-    description_text = " ".join(description)
-    logging.info(f"Generating bash command for: {description_text}")
-
-    if 'api_key' not in config:
-        raise ValueError("API key not found in configuration")
-
-    return generate_bash_command(description_text, config['api_key'])
-
-def run_bash_command(command: str) -> None:
-    """Run the generated bash command."""
-    try:
-        subprocess.run(command, shell=True, check=True)
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Command execution failed: {e}")
-        sys.exit(1)
-
 def prompt_and_run(command: str, mode: str) -> None:
     """Prompt the user to run the command and execute if confirmed."""
     print(command)
@@ -190,44 +213,6 @@ def prompt_and_run(command: str, mode: str) -> None:
 
     if user_input == 'y':
         run_bash_command(command)
-
-def initialize() -> Tuple[argparse.Namespace, Dict[str, str]]:
-    """Initialize the program by parsing arguments and reading the configuration."""
-    setup_signal_handler()
-
-    parser = create_argument_parser()
-    cmd_line_args = sys.argv[1:]
-
-    # First, parse just to get the config section and check for --version
-    temp_args, _ = parser.parse_known_args(cmd_line_args)
-
-    if temp_args.version:
-        version_message = f"{PROGRAM_NAME} version {VERSION}"
-        if temp_args.in_abc_bash_function:
-            print(f'echo "{version_message}"')
-        else:
-            print(version_message)
-        sys.exit(0)
-
-    config_file_path = os.environ.get(f'{PROGRAM_NAME.upper()}_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE))
-    config = read_config_file(config_file_path)
-    config_section = get_config_section(config, temp_args.config_section, config_file_path)
-
-    # Now apply default options from the specified section and parse all arguments
-    args = apply_default_options(parser, config_section, cmd_line_args)
-
-    setup_logging(args.log_level)
-
-    if args.in_abc_bash_function:
-        if args.mode is not None:
-            logging.error(f"Error: --mode option is not available when running {PROGRAM_NAME} as a bash function")
-            sys.exit(1)
-        args.mode = 'norun'
-
-    if args.mode is None:
-        args.mode = 'prompt'
-
-    return args, config_section
 
 def main() -> int:
     try:
