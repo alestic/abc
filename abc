@@ -72,11 +72,15 @@ def create_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument('-c', '--config', type=argparse.FileType('r'),
                         default=os.environ.get('ABC_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE)),
                         help='Path to configuration file')
-    parser.add_argument('--version', action='version', version=VERSION,
+    parser.add_argument('--version', action='store_true',
                         help='Display the program version and exit')
 
-    parser.add_argument('--mode', choices=['prompt', 'run', 'norun'], default='prompt',
-                        help='Mode of operation: prompt (default), run (without prompting), or norun (don\'t run)')
+    parser.add_argument('--mode', choices=['prompt', 'run', 'norun'],
+                        default=None,
+                        help='Mode of operation: prompt (default), run (without prompting), or norun (just show command)')
+
+    parser.add_argument('--in-abc-bash-function', action='store_true',
+                        help=f'Indicate that {PROGRAM_NAME} is being run inside the {PROGRAM_NAME} bash function')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--quiet', action='store_const',
@@ -189,11 +193,20 @@ def main() -> int:
         parser = create_argument_parser()
         cmd_line_args = sys.argv[1:]
 
-        config_file_path = os.environ.get('ABC_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE))
+        config_file_path = os.environ.get(f'{PROGRAM_NAME.upper()}_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE))
         config = read_config_file(config_file_path)
 
-        # First, parse just to get the config section
+        # First, parse just to get the config section and check for --version
         temp_args, _ = parser.parse_known_args(cmd_line_args)
+
+        if temp_args.version:
+            version_message = f"{PROGRAM_NAME} version {VERSION}"
+            if temp_args.in_abc_bash_function:
+                print(f'echo "{version_message}"')
+            else:
+                print(version_message)
+            return 0
+
         config_section = get_config_section(config, temp_args.config_section, config_file_path)
 
         # Now apply default options from the specified section and parse all arguments
@@ -201,8 +214,18 @@ def main() -> int:
 
         setup_logging(args.log_level)
 
+        if args.in_abc_bash_function:
+            if args.mode is not None:
+                logging.error(f"Error: --mode option is not available when running {PROGRAM_NAME} as a bash function")
+                return 1
+            args.mode = 'norun'
+
+        if args.mode is None:
+            args.mode = 'prompt'
+
         validate_description(args.description)
         bash_command = process_command(args.description, config_section)
+
         prompt_and_run(bash_command, args.mode)
 
         return 0
@@ -213,6 +236,7 @@ def main() -> int:
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
         return 1
+
 
 if __name__ == '__main__':
     sys.exit(main())

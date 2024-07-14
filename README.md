@@ -119,11 +119,13 @@ abc find duplicate files. separate groups of file names by blank line
 
 - There is a cost to using commercial LLM APIs. Review your spending regularly, and do not use this tool in an environment where it could be run automatically or excessively without human monitoring.
 
+- The command `abc --help` does not currently work when using the interactive bash function.
+
 ## TODO
 
-- Make command available to edit
 - Support multiple LLM models
 - Support multiple LLM providers
+- fix `abc --help` from bash function
 - Smarter prompts
 - "please think about it step-by-step within <thinking></thinking> tags"
 - LLM evaluation of response
