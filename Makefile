@@ -25,19 +25,23 @@ build: ## Install dependencies globally or in user space
 	@echo "Installing dependencies..."
 	$(PYTHON) -m pip install --user -r requirements.txt
 
-install: build ## Install the abc program
+install: build ## Install the abc program and interactive script
 	@echo "Installing abc..."
 	mkdir -p $(INSTALL_DIR)
 	cp abc $(INSTALL_DIR)/abc
 	chmod +x $(INSTALL_DIR)/abc
 	@echo "abc has been installed to $(INSTALL_DIR)/abc"
+	@echo "Installing abc_interactive.sh..."
+	cp abc_interactive.sh $(INSTALL_DIR)/abc_interactive.sh
+	@echo "abc_interactive.sh has been installed to $(INSTALL_DIR)/abc_interactive.sh"
 	@echo "Make sure $(INSTALL_DIR) is in your PATH"
 
-uninstall: ## Uninstall the ABC program and remove the config file
+uninstall: ## Uninstall the abc program, interactive script, and remove the config file
 	@echo "Uninstalling abc..."
 	rm -f $(INSTALL_DIR)/abc
+	rm -f $(INSTALL_DIR)/abc_interactive.sh
 	rm -f $(CONFIG_FILE)
-	@echo "abc has been uninstalled and the config file has been removed"
+	@echo "abc has been uninstalled, the interactive script and config file have been removed"
 
 clean: ## Remove generated files
 	@echo "Cleaning up..."
