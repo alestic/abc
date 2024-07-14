@@ -1,2 +1,2 @@
 anthropic==0.31.0
-readchar==0.8.0
+readchar==4.1.0
