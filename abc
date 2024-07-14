@@ -98,9 +98,9 @@ def get_config_section(config: configparser.ConfigParser, section_name: str, con
         raise configparser.Error(f"Error: Section '{section_name}' not found in config file '{config_file_path}'")
     return dict(config[section_name])
 
-def apply_default_options(parser: argparse.ArgumentParser, config: Dict[str, str], cmd_line_args: List[str]) -> argparse.Namespace:
-    """Apply default options from the config file and then parse command-line arguments."""
-    default_options = shlex.split(config.get('default_options', ''))
+def apply_default_options(parser: argparse.ArgumentParser, config_section: Dict[str, str], cmd_line_args: List[str]) -> argparse.Namespace:
+    """Apply default options from the config section and then parse command-line arguments."""
+    default_options = shlex.split(config_section.get('default_options', ''))
     default_args, _ = parser.parse_known_args(default_options)
     return parser.parse_args(args=cmd_line_args, namespace=default_args)
 
@@ -183,9 +183,12 @@ def main() -> int:
         config_file_path = os.environ.get('ABC_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE))
         config = read_config_file(config_file_path)
 
-        args = apply_default_options(parser, dict(config[DEFAULT_CONFIG_SECTION]), cmd_line_args)
+        # First, parse just to get the config section
+        temp_args, _ = parser.parse_known_args(cmd_line_args)
+        config_section = get_config_section(config, temp_args.config_section, config_file_path)
 
-        config_section = get_config_section(config, args.config_section, config_file_path)
+        # Now apply default options from the specified section and parse all arguments
+        args = apply_default_options(parser, config_section, cmd_line_args)
 
         setup_logging(args.log_level)
 
