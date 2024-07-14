@@ -51,6 +51,7 @@ api_key = your_api_key_here
 
 [project-2]
 api_key = another_api_key_here
+default_options = --mode=norun
 ```
 
 The program will attempt to read the config file from the first of these values provided:
