@@ -38,7 +38,6 @@ source ~/.bashrc  # or ~/.zshrc if you're using Zsh
 
    https://console.anthropic.com/settings/keys
 
-
 5. Create a configuration file at `~/.abc.conf` with your API key:
    ```ini
    [default]

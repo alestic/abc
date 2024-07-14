@@ -27,11 +27,12 @@ import signal
 import sys
 import subprocess
 from typing import List, Dict, Optional, IO, Tuple
+import distro
 
 import anthropic
 from readchar import readchar
 
-VERSION: str = "2024-07-13"
+VERSION: str = "2024-07-14"
 PROGRAM_NAME: str = "abc"
 
 # Config file
@@ -47,8 +48,16 @@ LLM_MODEL: str = "claude-3-5-sonnet-20240620"
 LLM_TEMPERATURE: float = 0.0
 LLM_MAX_TOKENS: int = 1000
 
-# System prompt
-SYSTEM_PROMPT: str = "You are an expert in bash commands. Given a description, generate the appropriate bash command(s) to accomplish the task. Provide only the command(s) without any explanation. Ensure the output can be directly copied and pasted into a terminal."
+def get_os_info():
+    system = distro.name(pretty=True)
+    version = distro.version(pretty=True)
+    return f"{system} {version}".strip() or "POSIX"
+
+SYSTEM_PROMPT: str = f"""You are an expert in bash commands for {get_os_info()}.
+Given a description, generate the appropriate bash command(s) to accomplish the task.
+Provide only the command(s) without any explanation.
+Ensure the output can be directly copied and pasted into a terminal.
+Use {get_os_info()}-specific commands when appropriate."""
 
 def signal_handler(signum: int, frame: Optional[object]) -> None:
     print('\nprogram interrupted')
