@@ -189,6 +189,8 @@ $ PATH=$(echo "$PATH" | awk -v RS=':' -v ORS=':' '!seen[$0]++' | sed 's/:$//')
 
 ## TODO
 
+- Support MacOS
+- Support zsh
 - Support multiple LLM models
 - Support multiple LLM providers
 - Smarter prompts
