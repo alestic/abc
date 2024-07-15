@@ -34,13 +34,15 @@ install: build ## Install the abc_generate program and interactive script
 	@echo "Installing abc.sh..."
 	cp abc.sh $(INSTALL_DIR)/abc.sh
 	@echo "abc.sh has been installed to $(INSTALL_DIR)/abc.sh"
-	@echo "Make sure $(INSTALL_DIR) is in your PATH"
 	@echo
-	@echo "To enable the interactive mode, add the following line to your ~/.bashrc:"
+	@echo "1. Make sure $(INSTALL_DIR) is in your PATH"
+	@echo
+	@echo "2. Add the following line to your ~/.bashrc:"
 	@echo "source \"$(INSTALL_DIR)/abc.sh\""
 	@echo
-	@echo "Then, reload your shell configuration with:"
+	@echo "3. Then, reload your shell configuration with:"
 	@echo "source ~/.bashrc"
+	@echo
 
 uninstall: ## Uninstall the abc_generate program, interactive script
 	@echo "Uninstalling abc..."
