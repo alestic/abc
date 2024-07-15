@@ -25,29 +25,29 @@ build: ## Install dependencies globally or in user space
 	@echo "Installing dependencies..."
 	$(PYTHON) -m pip install --user -r requirements.txt
 
-install: build ## Install the abc program and interactive script
+install: build ## Install the abc_generate program and interactive script
 	@echo "Installing abc..."
 	mkdir -p $(INSTALL_DIR)
-	cp abc $(INSTALL_DIR)/abc
-	chmod +x $(INSTALL_DIR)/abc
-	@echo "abc has been installed to $(INSTALL_DIR)/abc"
-	@echo "Installing abc_interactive.sh..."
-	cp abc_interactive.sh $(INSTALL_DIR)/abc_interactive.sh
-	@echo "abc_interactive.sh has been installed to $(INSTALL_DIR)/abc_interactive.sh"
+	cp abc_generate $(INSTALL_DIR)/abc_generate
+	chmod +x $(INSTALL_DIR)/abc_generate
+	@echo "abc_generate has been installed to $(INSTALL_DIR)/abc_generate"
+	@echo "Installing abc.sh..."
+	cp abc.sh $(INSTALL_DIR)/abc.sh
+	@echo "abc.sh has been installed to $(INSTALL_DIR)/abc.sh"
 	@echo "Make sure $(INSTALL_DIR) is in your PATH"
 	@echo
 	@echo "To enable the interactive mode, add the following line to your ~/.bashrc:"
-	@echo "source \"$(INSTALL_DIR)/abc_interactive.sh\""
+	@echo "source \"$(INSTALL_DIR)/abc.sh\""
 	@echo
 	@echo "Then, reload your shell configuration with:"
 	@echo "source ~/.bashrc"
 
-uninstall: ## Uninstall the abc program, interactive script, and remove the config file
+uninstall: ## Uninstall the abc_generate program, interactive script
 	@echo "Uninstalling abc..."
-	rm -f $(INSTALL_DIR)/abc
-	rm -f $(INSTALL_DIR)/abc_interactive.sh
-	rm -f $(CONFIG_FILE)
-	@echo "abc has been uninstalled, the interactive script and config file have been removed"
+	rm -f $(INSTALL_DIR)/abc_generate
+	rm -f $(INSTALL_DIR)/abc.sh
+	@echo "Removed abc_generate, abc.sh"
+	@echo "You may remove the `source abc.sh` command from ~/.bashrc and $(CONFIG_FILE)"
 
 clean: ## Remove generated files
 	@echo "Cleaning up..."

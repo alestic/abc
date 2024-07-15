@@ -25,7 +25,7 @@ This guide will walk you through the process of installing and setting up abc on
 3. Add the following line to your `~/.bashrc`:
 
 ```bash
-source "$HOME/.local/bin/abc_interactive.sh"
+source "$HOME/.local/bin/abc.sh"
 ```
 
 Then, reload your shell configuration:
@@ -49,10 +49,10 @@ source ~/.bashrc  # or ~/.zshrc if you're using Zsh
 To verify that abc is installed correctly, run:
 
 ```
-abc --version
+abc_generate --version
 ```
 
-This should display the version of abc.
+This should display the version of abc_generate.
 
 ## Updating
 
@@ -72,4 +72,4 @@ To uninstall abc:
 make uninstall
 ```
 
-This will remove the abc executable and the configuration file.
+This will remove the abc_generate executable, the abc.sh script, and the configuration file.
