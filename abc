@@ -19,10 +19,8 @@ Credits:
 
 import argparse
 import configparser
-import shlex
 import logging
 import os
-import signal
 import sys
 import subprocess
 from typing import List, Dict, Optional, Tuple
@@ -62,14 +60,6 @@ def setup_logging(log_level: int) -> None:
     """Set up logging configuration."""
     logging.basicConfig(level=log_level, format=LOG_FORMAT, datefmt=LOG_FORMAT_DATE)
 
-def signal_handler(signum: int, frame: Optional[object]) -> None:
-    print('\nprogram interrupted')
-    sys.exit(1)
-
-def setup_signal_handler() -> None:
-    """Set up the signal handler for interrupts."""
-    signal.signal(signal.SIGINT, signal_handler)
-
 def create_argument_parser() -> argparse.ArgumentParser:
     """Create an argument parser for command-line arguments."""
     parser = argparse.ArgumentParser(description="abc - AI Bash Command")
@@ -108,15 +98,12 @@ def read_config_file(config_file_path: str) -> dict:
     return dict(config[first_section])
 
 def get_args_and_config() -> Tuple[argparse.Namespace, Dict[str, str]]:
-    """Create argument parser, read config, and parse command-line arguments with default options."""
+    """Create argument parser, read config, and parse command-line arguments."""
     parser = create_argument_parser()
     config_file_path = os.environ.get(f'{PROGRAM_NAME.upper()}_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE))
     config = read_config_file(config_file_path)
 
-    # Apply default options from the config and then parse command-line arguments
-    default_options = shlex.split(config.get('default_options', ''))
-    default_args, _ = parser.parse_known_args(default_options)
-    args = parser.parse_args(args=sys.argv[1:], namespace=default_args)
+    args = parser.parse_args()
 
     return args, config
 
@@ -133,7 +120,6 @@ def initialize() -> Tuple[argparse.Namespace, Dict[str, str]]:
     args, config = get_args_and_config()
 
     setup_logging(args.log_level)
-    setup_signal_handler()
     handle_version_check(args)
 
     if args.in_abc_bash_function:
