@@ -24,15 +24,15 @@ This guide will walk you through the process of installing and setting up abc on
 
 3. Add the following line to your `~/.bashrc`:
 
-```bash
-source "$HOME/.local/bin/abc.sh"
-```
+   ```bash
+   source "$HOME/.local/bin/abc.sh"
+   ```
 
-Then, reload your shell configuration:
+   Then, reload your shell configuration:
 
-```bash
-source ~/.bashrc
-```
+   ```bash
+   source ~/.bashrc
+   ```
 
 4. Create an Anthropic API key:
 
