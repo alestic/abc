@@ -49,10 +49,10 @@ source ~/.bashrc
 To verify that abc is installed correctly, run:
 
 ```
-abc_generate --version
+abc --version
 ```
 
-This should display the version of abc_generate.
+This should display the version of abc.
 
 ## Updating
 
