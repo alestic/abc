@@ -7,6 +7,7 @@ This guide will walk you through the process of installing and setting up abc on
 - Python 3.7 or higher
 - pip (Python package installer)
 - An API key for the Claude AI model from Anthropic
+- bash 4.4 or higher
 
 ## Installation Steps
 
