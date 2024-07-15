@@ -31,7 +31,7 @@ source "$HOME/.local/bin/abc.sh"
 Then, reload your shell configuration:
 
 ```bash
-source ~/.bashrc  # or ~/.zshrc if you're using Zsh
+source ~/.bashrc
 ```
 
 4. Create an Anthropic API key:
@@ -72,4 +72,4 @@ To uninstall abc:
 make uninstall
 ```
 
-This will remove the abc_generate executable, the abc.sh script, and the configuration file.
+This will remove the abc_generate executable and the abc.sh script.
