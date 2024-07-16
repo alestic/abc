@@ -7,7 +7,7 @@ This guide will walk you through the process of installing and setting up abc on
 - Python 3.7 or higher
 - pip (Python package installer)
 - An API key for the Claude AI model from Anthropic
-- bash 4.4 or higher
+- bash 4.4 or higher, or zsh 5.0 or higher
 
 ## Installation Steps
 
@@ -23,16 +23,28 @@ This guide will walk you through the process of installing and setting up abc on
    make build install
    ```
 
-3. Add the following line to your `~/.bashrc`:
+3. Add the following line to your shell configuration file:
 
+   For bash users, add to `~/.bashrc`:
    ```bash
+   source "$HOME/.local/bin/abc.sh"
+   ```
+
+   For zsh users, add to `~/.zshrc`:
+   ```zsh
    source "$HOME/.local/bin/abc.sh"
    ```
 
    Then, reload your shell configuration:
 
+   For bash:
    ```bash
    source ~/.bashrc
+   ```
+
+   For zsh:
+   ```zsh
+   source ~/.zshrc
    ```
 
 4. Create an Anthropic API key:
@@ -62,7 +74,7 @@ To update abc to the latest version, pull the latest changes from the repository
 ```
 git pull
 make build install
-source ~/.bashrc
+source ~/.bashrc  # or source ~/.zshrc for zsh users
 ```
 
 ## Uninstalling
@@ -74,3 +86,5 @@ make uninstall
 ```
 
 This will remove the abc_generate executable and the abc.sh script.
+
+Don't forget to remove the `source` line from your `~/.bashrc` or `~/.zshrc` file.
