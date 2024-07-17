@@ -24,7 +24,7 @@ from typing import List, Dict, Tuple
 import anthropic
 import distro
 
-VERSION: str = "# 2024-07-17"
+VERSION: str = "# 2024-07-17b"
 PROGRAM_NAME: str = "abc"
 
 # Config file
