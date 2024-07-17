@@ -1,57 +1,61 @@
 # Makefile for abc (AI Bash Command)
 
-# Python interpreter to use
+# Variables
 PYTHON := python3
-
-# Installation directory (should be in PATH)
 INSTALL_DIR := $(HOME)/.local/bin
-
-# Config file location
 CONFIG_FILE := $(HOME)/.abc.conf
+SHELL := /bin/bash
+
+# Files
+SCRIPT_FILES := abc_generate abc.sh
+CONFIG_TEMPLATE := abc.conf.template
 
 # Default target
 .DEFAULT_GOAL := help
 
-.PHONY: help build install uninstall clean
+# Phony targets
+.PHONY: help build install uninstall clean config
 
-# Target descriptions should start with a capital letter and not end with a period
 help: ## Display this help message
 	@echo "Usage: make [target]"
-	@echo
+	@echo ""
 	@echo "Targets:"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-build: ## Install dependencies globally or in user space
+build: ## Install dependencies
 	@echo "Installing dependencies..."
 	$(PYTHON) -m pip install --user -r requirements.txt
 
-install: build ## Install the abc_generate program and interactive script
+install: build ## Install abc_generate and abc.sh
 	@echo "Installing abc..."
 	mkdir -p $(INSTALL_DIR)
-	cp abc_generate $(INSTALL_DIR)/abc_generate
+	cp $(SCRIPT_FILES) $(INSTALL_DIR)/
 	chmod +x $(INSTALL_DIR)/abc_generate
-	@echo "abc_generate has been installed to $(INSTALL_DIR)/abc_generate"
-	@echo "Installing abc.sh..."
-	cp abc.sh $(INSTALL_DIR)/abc.sh
-	@echo "abc.sh has been installed to $(INSTALL_DIR)/abc.sh"
-	@echo
-	@echo "1. Make sure $(INSTALL_DIR) is in your PATH"
-	@echo
-	@echo "2. Add the following line to your ~/.bashrc:"
-	@echo "source \"$(INSTALL_DIR)/abc.sh\""
-	@echo
-	@echo "3. Then, reload your shell configuration with:"
-	@echo "source ~/.bashrc"
-	@echo
+	@echo "abc has been installed to $(INSTALL_DIR)"
+	@echo ""
+	@echo "Next steps:"
+	@echo "1. Ensure $(INSTALL_DIR) is in your PATH"
+	@echo "2. Add this line to your ~/.bashrc or ~/.zshrc:"
+	@echo "   source \"$(INSTALL_DIR)/abc.sh\""
+	@echo "3. Create $(CONFIG_FILE) using $(CONFIG_TEMPLATE) as a template"
+	@echo "4. Reload your shell configuration"
 
-uninstall: ## Uninstall the abc_generate program, interactive script
+uninstall: ## Uninstall abc
 	@echo "Uninstalling abc..."
-	rm -f $(INSTALL_DIR)/abc_generate
-	rm -f $(INSTALL_DIR)/abc.sh
-	@echo "Removed abc_generate, abc.sh"
-	@echo "You may remove the `source abc.sh` command from ~/.bashrc and $(CONFIG_FILE)"
+	rm -f $(addprefix $(INSTALL_DIR)/,$(SCRIPT_FILES))
+	@echo "Removed abc_generate and abc.sh"
+	@echo "Remember to remove the 'source' line from your shell configuration file"
 
-clean: ## Remove generated files
+clean: ## Remove generated files and caches
 	@echo "Cleaning up..."
 	find . -type f -name '*.pyc' -delete
 	find . -type d -name '__pycache__' -delete
+
+config: ## Create a config file from the template
+	@if [ ! -f $(CONFIG_FILE) ]; then \
+		cp $(CONFIG_TEMPLATE) $(CONFIG_FILE); \
+		echo "Config file created at $(CONFIG_FILE)"; \
+		echo "Please edit it with your API key"; \
+	else \
+		echo "Config file already exists at $(CONFIG_FILE)"; \
+	fi

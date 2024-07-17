@@ -1,0 +1,5 @@
+# abc (AI Bash Command) Configuration File
+
+[default]
+# Anthropic API key from https://console.anthropic.com/settings/keys
+api_key = your_api_key_here
