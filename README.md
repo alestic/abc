@@ -8,7 +8,7 @@ abc [OPTION]... DESCRIPTION...
 
 ## Description
 
-abc (AI Bash Command) lets you type an English description of a task and get an LLM generated command on your shell prompt, ready to edit and execute. For example:
+abc (AI Bash Command) lets you type an English description of a task and get an LLM generated command on your next shell prompt, ready to edit and execute. For example:
 
 ```
 $ abc list files one per line, sorting lines from short to long
