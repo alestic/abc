@@ -7,7 +7,7 @@ This guide will walk you through the process of installing and setting up abc on
 - Python 3.7 or higher
 - pip (Python package installer)
 - An API key for the Claude AI model from Anthropic
-- bash 4.4 or higher, or zsh 5.0 or higher
+- bash 4.4 or higher, or zsh 5.0 or higher, or tcsh 6.0 or higher
 
 ## Installation Steps
 
@@ -35,6 +35,11 @@ This guide will walk you through the process of installing and setting up abc on
    source "$HOME/.local/bin/abc.sh"
    ```
 
+   For tcsh users, add to `~/.tcshrc`:
+   ```tcsh
+   source "$HOME/.local/bin/abc.tcsh"
+   ```
+
    Then, reload your shell configuration:
 
    For bash:
@@ -45,6 +50,11 @@ This guide will walk you through the process of installing and setting up abc on
    For zsh:
    ```zsh
    source ~/.zshrc
+   ```
+
+   For tcsh:
+   ```tcsh
+   source ~/.tcshrc
    ```
 
 4. Create an Anthropic API key:
@@ -74,7 +84,7 @@ To update abc to the latest version, pull the latest changes from the repository
 ```
 git pull
 make build install
-source ~/.bashrc  # or source ~/.zshrc for zsh users
+source ~/.bashrc  # or source ~/.zshrc for zsh users, or source ~/.tcshrc for tcsh users
 ```
 
 ## Uninstalling
@@ -85,6 +95,6 @@ To uninstall abc:
 make uninstall
 ```
 
-This will remove the abc_generate executable and the abc.sh script.
+This will remove the abc_generate executable and the abc.sh and abc.tcsh scripts.
 
-Don't forget to remove the `source` line from your `~/.bashrc` or `~/.zshrc` file.
+Don't forget to remove the `source` line from your `~/.bashrc`, `~/.zshrc`, or `~/.tcshrc` file.

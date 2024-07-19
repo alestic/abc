@@ -7,7 +7,7 @@ CONFIG_FILE := $(HOME)/.abc.conf
 SHELL := /bin/bash
 
 # Files
-SCRIPT_FILES := abc_generate abc.sh
+SCRIPT_FILES := abc_generate abc.sh abc.tcsh
 CONFIG_TEMPLATE := abc.conf.template
 
 # Default target
@@ -26,7 +26,7 @@ build: ## Install dependencies
 	@echo "Installing dependencies..."
 	$(PYTHON) -m pip install --user -r requirements.txt
 
-install: build ## Install abc_generate and abc.sh
+install: build ## Install abc_generate, abc.sh, and abc.tcsh
 	@echo "Installing abc..."
 	mkdir -p $(INSTALL_DIR)
 	cp $(SCRIPT_FILES) $(INSTALL_DIR)/
@@ -34,16 +34,20 @@ install: build ## Install abc_generate and abc.sh
 	@echo "abc has been installed to $(INSTALL_DIR)"
 	@echo ""
 	@echo "Next steps:"
-	@echo "1. Ensure $(INSTALL_DIR) is in your PATH"
-	@echo "2. Add this line to your ~/.bashrc or ~/.zshrc:"
-	@echo "   source \"$(INSTALL_DIR)/abc.sh\""
+	@echo "1. Ensure this directory is in your PATH:"
+	@echo "     $(INSTALL_DIR)"
+	@echo "2. Add one of these lines to your shell configuration file:"
+	@echo "   For bash/zsh:"
+	@echo "     source \"$(INSTALL_DIR)/abc.sh\""
+	@echo "   For tcsh:"
+	@echo "     source \"$(INSTALL_DIR)/abc.tcsh\""
 	@echo "3. Create $(CONFIG_FILE) using $(CONFIG_TEMPLATE) as a template"
 	@echo "4. Reload your shell configuration"
 
 uninstall: ## Uninstall abc
 	@echo "Uninstalling abc..."
 	rm -f $(addprefix $(INSTALL_DIR)/,$(SCRIPT_FILES))
-	@echo "Removed abc_generate and abc.sh"
+	@echo "Removed abc_generate, abc.sh, and abc.tcsh"
 	@echo "Remember to remove the 'source' line from your shell configuration file"
 
 clean: ## Remove generated files and caches

@@ -24,7 +24,7 @@ from typing import List, Dict, Tuple
 import anthropic
 import distro
 
-VERSION: str = "# 2024-07-17b"
+VERSION: str = "# 2024-07-18"
 PROGRAM_NAME: str = "abc"
 
 # Config file
@@ -65,7 +65,7 @@ def create_argument_parser() -> argparse.ArgumentParser:
                         help='Path to configuration file')
     parser.add_argument('--version', action='version', version=VERSION,
                         help='Display the program version and exit')
-    parser.add_argument('--shell', choices=['bash', 'zsh'], default='bash',
+    parser.add_argument('--shell', choices=['bash', 'zsh', 'tcsh'], default='bash',
                         help='Specify the shell to generate commands for (default: bash)')
 
     group = parser.add_mutually_exclusive_group()
