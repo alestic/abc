@@ -51,7 +51,8 @@ Given a description, generate the appropriate {shell} command(s) to accomplish t
 Provide only the command(s) without any explanation.
 Ensure the output can be directly copied and pasted into a terminal.
 Use {get_os_info()}-specific commands when appropriate and {shell}-specific syntax.
-Important: The entire command must be on a single line. Use semicolons or && to separate multiple commands if necessary."""
+Important: The entire command must be on a single line. Use semicolons or && to separate multiple commands if necessary.
+If you need to provide any response that is not a shell command, prefix it with '# ' to comment it out."""
 
 def setup_logging(log_level: int) -> None:
     """Set up logging configuration."""
