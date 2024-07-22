@@ -227,6 +227,7 @@ $ PATH=$(echo $PATH | tr ':' '\n' | awk '!seen[$0]++' | tr '\n' ':' | sed 's/:$/
 - Smarter prompts
 - LLM evaluation of generated command
 - Warn of dangerous commands and require comment character to be removed
+- Comment out any response that is not a shell command
 - "please think about it step-by-step within 'thinking' tags"
 - Use request history and generated commands as context for conversation
 
@@ -245,4 +246,4 @@ Prompt crafting by Eric Hammond
 
 ## Version
 
-Current version: 2024-07-18
+Current version: 2024-07-22
