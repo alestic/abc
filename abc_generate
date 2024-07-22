@@ -20,11 +20,12 @@ import logging
 import os
 import sys
 from typing import List, Dict, Tuple
+import re
 
 import anthropic
 import distro
 
-VERSION: str = "# 2024-07-18"
+VERSION: str = "# 2024-07-22"
 PROGRAM_NAME: str = "abc"
 
 # Config file
@@ -40,19 +41,15 @@ LLM_MODEL: str = "claude-3-5-sonnet-20240620"
 LLM_TEMPERATURE: float = 0.0
 LLM_MAX_TOKENS: int = 1000
 
+# Constants for danger level parsing
+DANGER_LEVEL_PATTERN = r'##DANGERLEVEL=(\d)## (.+)$'
+HIGH_DANGER_THRESHOLD = 2
+DANGEROUS_PREFIX = '#DANGEROUS# '
+
 def get_os_info():
     system = distro.name(pretty=True)
     version = distro.version(pretty=True)
     return f"{system} {version}".strip() or "POSIX"
-
-def get_system_prompt(shell: str):
-    return f"""You are an expert in {shell} commands for {get_os_info()}.
-Given a description, generate the appropriate {shell} command(s) to accomplish the task.
-Provide only the command(s) without any explanation.
-Ensure the output can be directly copied and pasted into a terminal.
-Use {get_os_info()}-specific commands when appropriate and {shell}-specific syntax.
-Important: The entire command must be on a single line. Use semicolons or && to separate multiple commands if necessary.
-If you need to provide any response that is not a shell command, prefix it with '# ' to comment it out."""
 
 def setup_logging(log_level: int) -> None:
     """Set up logging configuration."""
@@ -102,6 +99,21 @@ def get_config(config_file_path: str) -> Dict[str, str]:
     first_section = config.sections()[0]
     return dict(config[first_section])
 
+def get_system_prompt(shell: str):
+    return f"""You are an expert in {shell} commands for {get_os_info()}.
+Given a description, generate the appropriate {shell} command(s) to accomplish the task.
+Provide only the command(s) without any explanation.
+Ensure the output can be directly copied and pasted into a terminal.
+Use {get_os_info()}-specific commands when appropriate and {shell}-specific syntax.
+Important: The entire command must be on a single line. Use semicolons or && to separate multiple commands if necessary.
+After generating the command, evaluate its danger level and add it on a new line in this format:
+##DANGERLEVEL=X## [justification]
+Where X is:
+0 = Read only, informational command.
+1 = Modifies the system in common ways or generates some standard side effects.
+2 = Potential loss of significant data or large side effects. Should be reviewed carefully.
+Provide a brief justification for the danger level assigned."""
+
 def generate_command(description: str, api_key: str, shell: str) -> str:
     """Generate a command using the LLM based on the given description and shell."""
     client = anthropic.Anthropic(api_key=api_key)
@@ -138,6 +150,27 @@ def process_command(description: List[str], config: Dict[str, str], shell: str) 
 
     return generate_command(description_text, config['api_key'], shell)
 
+def process_generated_command(command: str) -> str:
+    """Process the generated command based on its danger level."""
+    lines = command.splitlines()
+    if not lines:
+        return command  # Empty command, return as is
+
+    # Check if the last line contains danger level information
+    danger_match = re.match(DANGER_LEVEL_PATTERN, lines[-1])
+    if not danger_match:
+        return command  # No danger level provided or invalid format, return as is
+
+    command_lines = lines[:-1]  # All lines except the last one
+    danger_level = int(danger_match.group(1))
+    justification = danger_match.group(2)
+
+    if danger_level >= HIGH_DANGER_THRESHOLD:
+        print(f"Warning: This command is potentially dangerous. {justification}", file=sys.stderr)
+        command_lines[0] = f"{DANGEROUS_PREFIX}{command_lines[0]}"
+
+    return '\n'.join(command_lines)
+
 def main() -> int:
     try:
         parser = create_argument_parser()
@@ -148,8 +181,18 @@ def main() -> int:
         config_file_path = args.config.name if args.config else os.environ.get('ABC_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE))
         config = get_config(config_file_path)
 
-        command = process_command(args.description, config, args.shell)
-        print(command)
+        if 'api_key' not in config:
+            raise ValueError("API key not found in configuration")
+
+        description = " ".join(args.description)
+        if not description:
+            raise ValueError("No description provided")
+
+        logging.info(f"Generating {args.shell} command for: {description}")
+
+        raw_command = generate_command(description, config['api_key'], args.shell)
+        processed_command = process_generated_command(raw_command)
+        print(processed_command)
 
         return 0
 
