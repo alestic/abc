@@ -1,4 +1,4 @@
-# abc (AI Bash Command)
+# abc (AI bash/zsh/tcsh Command)
 
 ## Synopsis
 
