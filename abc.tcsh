@@ -7,5 +7,6 @@ alias abc 'set __abc_cmd=`abc_generate --shell tcsh \!*`; \
   echo "$__abc_user_cmd" >> $__abc_tmpfile; \
   history -M $__abc_tmpfile; \
   rm -f $__abc_tmpfile; \
+  unset __abc_cmd __abc_prompt __abc_tmpfile; \
   eval $__abc_user_cmd; \
-  unset __abc_cmd __abc_prompt __abc_tmpfile __abc_user_cmd'
+  unset __abc_user_cmd'
