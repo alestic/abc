@@ -249,8 +249,7 @@ Always review these warnings and dangerous commands carefully before execution.
 - Support MacOS
 - Support multiple LLM models
 - Support multiple LLM providers
-- Smarter prompts
-- LLM evaluation of generated command
+- Support custom prompt context
 - Use request history and generated commands as context for conversation
 
 ## Contributing
