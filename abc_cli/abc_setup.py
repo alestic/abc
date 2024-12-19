@@ -84,61 +84,150 @@ def backup_file(file_path, timestamp):
     shutil.copy2(file_path, backup_path)
     logging.info(f"Created backup: {backup_path}")
 
-def modify_rc_file(file_path, source_line, remove=False):
-    """Add or remove source block from rc file. Returns True if file was modified."""
-    file_path = Path.home() / file_path
+def find_abc_block(content):
+    """Find and extract the abc block from file content.
 
-    # Check if file exists
-    if not file_path.exists():
-        logging.info(f"Skipping {file_path}: file not found")
+    Returns:
+        tuple: (block_content, start_index, end_index) or (None, -1, -1) if not found
+
+    Raises:
+        ValueError: If a corrupted block is found (begin marker without end marker)
+    """
+    existing_block = []
+    in_block = False
+    block_start_idx = -1
+    block_end_idx = -1
+
+    for i, line in enumerate(content):
+        if MARKER_BEGIN in line:
+            if in_block:
+                # Found second begin marker before an end marker
+                raise ValueError("Corrupted abc block: Found nested begin marker")
+            in_block = True
+            block_start_idx = i
+        elif MARKER_END in line:
+            if not in_block:
+                raise ValueError("Corrupted abc block: Found end marker without begin marker")
+            in_block = False
+            block_end_idx = i
+        elif in_block:
+            existing_block.append(line)
+
+    if block_start_idx != -1:
+        if block_end_idx == -1:
+            raise ValueError("Corrupted abc block: Missing end marker")
+        return existing_block, block_start_idx, block_end_idx
+    return None, -1, -1
+
+def create_abc_block(source_line):
+    """Create a new abc block with the given source line."""
+    return [
+        f"{MARKER_BEGIN}\n",
+        f"{MARKER_MIDDLE}\n",
+        f"{source_line}\n",
+        f"{MARKER_END}\n"
+    ]
+
+def is_block_up_to_date(existing_block, source_line):
+    """Check if the existing block content matches the expected content."""
+    return existing_block == [f"{MARKER_MIDDLE}\n", f"{source_line}\n"]
+
+def remove_abc_block(content):
+    """Remove abc block from content if it exists.
+
+    Returns:
+        tuple: (new_content, found_block)
+    """
+    new_content = []
+    in_block = False
+    found_block = False
+
+    for line in content:
+        if MARKER_BEGIN in line:
+            in_block = True
+            found_block = True
+        elif MARKER_END in line:
+            in_block = False
+        elif not in_block:
+            new_content.append(line)
+
+    return new_content, found_block
+
+def check_needs_modification(content, source_line, remove=False):
+    """Check if file needs modification without changing it.
+
+    Returns:
+        bool: True if file needs modification, False otherwise
+    """
+    try:
+        if remove:
+            # Check if block exists to remove
+            for line in content:
+                if MARKER_BEGIN in line:
+                    return True
+            return False
+        else:
+            # Check if block needs to be added/updated
+            existing_block, _, _ = find_abc_block(content)
+            if existing_block is None:
+                return True  # Need to add new block
+            return not is_block_up_to_date(existing_block, source_line)  # Need to update if not up to date
+    except ValueError:
+        return False  # Don't modify corrupted files
+
+def read_rc_file(file_path):
+    """Read lines from the rc file, return list of lines or None if not found."""
+    path = Path.home() / file_path
+    if not path.exists():
+        return None
+    with open(path, 'r') as f:
+        return f.readlines()
+
+def write_rc_file(file_path, lines):
+    """Write lines back to the rc file."""
+    path = Path.home() / file_path
+    with open(path, 'w') as f:
+        f.writelines(lines)
+
+def try_modify_rc_file(file_path, source_line, remove=False):
+    """Check if modification is needed and perform it if required."""
+    lines = read_rc_file(file_path)
+    if lines is None:
+        logging.info(f"Skipping {Path.home() / file_path}: file not found")
         return False
 
-    # Read existing content
-    with open(file_path, 'r') as f:
-        content = f.readlines()
+    if not check_needs_modification(lines, source_line, remove):
+        logging.info(f"Skipping {Path.home() / file_path}: no modification needed")
+        return False
 
-    # Process content
-    if remove:
-        # Remove existing block
-        new_content = []
-        in_block = False
-        found_block = False
-        for line in content:
-            if MARKER_BEGIN in line:
-                in_block = True
-                found_block = True
-            elif MARKER_END in line:
-                in_block = False
-            elif not in_block:
-                new_content.append(line)
-        if not found_block:
-            return False
-        content = new_content
-    else:
-        # Check if block already exists
-        if any(MARKER_BEGIN in line for line in content):
-            logging.info(f"Skipping {file_path}: abc block already exists")
-            return False
-
-        # Add new block
-        if content and content[-1].strip():
-            content.append('\n')  # Add newline if file doesn't end with one
-        content.extend([
-            f"{MARKER_BEGIN}\n",
-            f"{MARKER_MIDDLE}\n",
-            f"{source_line}\n",
-            f"{MARKER_END}\n"
-        ])
-
-    # Write back
-    with open(file_path, 'w') as f:
-        f.writelines(content)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    backup_path = (Path.home() / file_path).with_suffix(f'.bak_{timestamp}')
+    shutil.copy2(Path.home() / file_path, backup_path)
+    logging.info(f"Created backup: {backup_path}")
 
     if remove:
-        logging.info(f"Removed abc block from {file_path}")
+        new_lines, _ = remove_abc_block(lines)
+        logging.info(f"Removing abc block from {Path.home() / file_path}")
     else:
-        logging.info(f"Added abc block to {file_path}")
+        try:
+            existing_block, start, end = find_abc_block(lines)
+            new_block = create_abc_block(source_line)
+            if existing_block is not None:
+                # Update existing block
+                lines[start:end+1] = new_block
+                logging.info(f"Updating abc block in {Path.home() / file_path}")
+            else:
+                # Add new block
+                if lines and lines[-1].strip():
+                    lines.append('\n')  # Add newline if file doesn't end with one
+                lines.extend(new_block)
+                logging.info(f"Adding abc block to {Path.home() / file_path}")
+            new_lines = lines
+        except ValueError as e:
+            logging.error(f"Error processing {Path.home() / file_path}: {str(e)}")
+            return False
 
+    write_rc_file(file_path, new_lines)
     return True
 
 def setup_config(no_prompt=False):
@@ -230,9 +319,9 @@ def setup_shell_scripts(no_prompt=False):
             if not rc_path.exists():
                 continue
             found_shells.append(shell)
-            if modify_rc_file(rc_file, source_line):
+
+            if try_modify_rc_file(rc_file, source_line, remove=False):
                 modified = True
-                backup_file(rc_path, timestamp)
 
         if modified:
             print("\nShell configuration files have been updated.")
@@ -277,13 +366,13 @@ def uninstall(no_prompt=False):
                 if not rc_path.exists():
                     continue
                 found_shells.append(shell)
-                if modify_rc_file(rc_file, '', remove=True):
+                if try_modify_rc_file(rc_file, '', remove=True):
                     modified = True
-                    backup_file(rc_path, timestamp)
 
         # Optionally remove configuration
         config_file = Path.home() / '.abc.conf'
         if config_file.exists() and prompt_user("\nWould you like to remove the configuration file (~/.abc.conf)?", default=False, no_prompt=no_prompt):
+            # Create backup before removal since we know we'll modify it
             backup_file(config_file, timestamp)
             config_file.unlink()
             logging.info("Removed configuration file")
