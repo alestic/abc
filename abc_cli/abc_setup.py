@@ -532,36 +532,6 @@ def uninstall(no_prompt=False):
                 if try_modify_rc_file(rc_file, '', remove=True, no_prompt=no_prompt):
                     modified = True
 
-        # Show config removal instructions
-        xdg_config, legacy_config = get_config_paths()
-
-        if xdg_config.exists():
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            description = "Save configuration file before uninstall removes it"
-            commands = [
-                f"# Save config to home directory with timestamp:",
-                f"mv {xdg_config} ~/abc.config_{timestamp}",
-            ]
-            if show_instructions_and_confirm(description, commands, no_prompt):
-                # Save to home directory
-                home_backup = Path.home() / f"abc.config_{timestamp}"
-                shutil.copy2(xdg_config, home_backup)
-                logging.info(f"Saved config to: {home_backup}")
-                xdg_config.unlink()
-                logging.info(f"Removed configuration file: {xdg_config}")
-
-        if legacy_config.exists():
-            description = "About to remove legacy configuration file"
-            commands = [
-                f"# Backup and remove:",
-                f"cp {legacy_config} {legacy_config}.bak",
-                f"rm {legacy_config}"
-            ]
-            if show_instructions_and_confirm(description, commands, no_prompt):
-                backup_file(legacy_config, timestamp)
-                legacy_config.unlink()
-                logging.info("Removed legacy configuration file")
-
         print("\nUninstallation complete. You may now run:")
         print("pipx uninstall abc-cli")
 
