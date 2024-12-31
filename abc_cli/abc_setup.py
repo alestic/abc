@@ -242,7 +242,7 @@ def try_modify_rc_file(file_path, source_line, remove=False, no_prompt=False):
             f"# Remove the following block from {rc_path}:",
             MARKER_BEGIN,
             MARKER_MIDDLE,
-            source_line,
+            "...",
             MARKER_END
         ]
     else:
