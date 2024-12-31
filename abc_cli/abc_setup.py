@@ -536,14 +536,17 @@ def uninstall(no_prompt=False):
         xdg_config, legacy_config = get_config_paths()
 
         if xdg_config.exists():
-            description = "About to remove configuration file"
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            description = "Save configuration file before uninstall removes it"
             commands = [
-                f"# Backup and remove:",
-                f"cp {xdg_config} {xdg_config}.bak",
-                f"rm {xdg_config}"
+                f"# Save config to home directory with timestamp:",
+                f"mv {xdg_config} ~/abc.config_{timestamp}",
             ]
             if show_instructions_and_confirm(description, commands, no_prompt):
-                backup_file(xdg_config, timestamp)
+                # Save to home directory
+                home_backup = Path.home() / f"abc.config_{timestamp}"
+                shutil.copy2(xdg_config, home_backup)
+                logging.info(f"Saved config to: {home_backup}")
                 xdg_config.unlink()
                 logging.info(f"Removed configuration file: {xdg_config}")
 
