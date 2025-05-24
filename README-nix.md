@@ -1,7 +1,5 @@
 # Nix Installation Support for abc (Experimental)
 
-<!-- [Created by AI: Claude Code] -->
-
 This document describes the experimental Nix/NixOS support for the `abc` (AI Bash Command) tool. This is a first draft implementation in response to [issue #24](https://github.com/alestic/abc/issues/24) and we welcome feedback from the Nix community.
 
 ## Installation
@@ -160,3 +158,6 @@ The Nix implementation:
 - Maintains compatibility with all existing abc functionality
 
 For more details, see the `flake.nix` file in the repository.
+
+---
+*[Created by AI: Claude Code]*
