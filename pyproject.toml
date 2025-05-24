@@ -14,9 +14,9 @@ authors = [
     { name = "Eric Hammond", email = "" }
 ]
 dependencies = [
-    "readchar==4.1.0",
-    "distro==1.8.0",
-    "prompt_toolkit==3.0.47"
+    "readchar>=4.1.0",
+    "distro>=1.8.0",
+    "prompt_toolkit>=3.0.47"
 ]
 
 [project.urls]
