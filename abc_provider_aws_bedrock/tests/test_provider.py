@@ -21,7 +21,7 @@ MOCK_CONFIG = {
 MOCK_CONFIG_FULL = {
     "provider": PROVIDER_NAME,
     "profile": "abc-cli",
-    "model": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "model": "anthropic.claude-sonnet-4-20250514-v1:0",
     "region": "us-east-1",
     "temperature": "0.5",
     "max_tokens": "500",
@@ -61,7 +61,7 @@ def test_init_full_config():
     """Test provider initialization with full config."""
     with patch('boto3.Session') as mock_session:
         provider = AWSBedrockProvider(MOCK_CONFIG_FULL)
-        assert provider.model_id == "anthropic.claude-3-5-sonnet-20241022-v2:0"
+        assert provider.model_id == "anthropic.claude-sonnet-4-20250514-v1:0"
         assert provider.region == "us-east-1"
         assert provider.temperature == 0.5
         assert provider.max_tokens == 500

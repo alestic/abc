@@ -23,7 +23,7 @@ Configure the provider in your `~/.abc.conf`:
 api_key = {ANTHROPIC_API_KEY}  # Required: Your Anthropic API key
 
 # Optional settings with defaults shown:
-model = claude-3-5-sonnet-20241022  # Claude model to use
+model = claude-sonnet-4-20250514  # Claude model to use
 temperature = 0.0                    # Lower values = more deterministic output
 max_tokens = 1000                    # Maximum response length
 ```
@@ -31,7 +31,7 @@ max_tokens = 1000                    # Maximum response length
 ### Configuration Options
 
 - `api_key` (required): Your Anthropic API key. Get it from the [Anthropic Console](https://console.anthropic.com/settings/keys).
-- `model` (optional): The Claude model to use. Default: `claude-3-5-sonnet-20241022`
+- `model` (optional): The Claude model to use. Default: `claude-sonnet-4-20250514`
   - Supported models: See [Anthropic's model list](https://docs.anthropic.com/claude/docs/models-overview)
 - `temperature` (optional): Controls randomness in command generation. Default: `0.0`
   - Range: 0.0 to 1.0

@@ -21,7 +21,7 @@ provider = anthropic
 
 [anthropic]
 api_key = YOUR_ANTHROPIC_API_KEY_HERE
-model = claude-3-5-sonnet-latest
+model = claude-sonnet-4-20250514
 EOF
 chmod 600 ~/.config/abc/config
 
@@ -49,7 +49,7 @@ Add to your `home.nix`:
       provider = "anthropic";
       anthropic = {
         api_key = "YOUR_API_KEY_HERE";  # Consider using secrets management
-        model = "claude-3-5-sonnet-20241022";
+        model = "claude-sonnet-4-20250514";
       };
     };
   };
@@ -80,11 +80,11 @@ provider = anthropic
 
 [anthropic]
 api_key = sk-ant-api03-...
-model = claude-3-5-sonnet-20241022
+model = claude-sonnet-4-20250514
 
 [aws-bedrock]
 region = us-east-1
-model = anthropic.claude-3-5-sonnet-20241022-v2:0
+model = anthropic.claude-sonnet-4-20250514-v1:0
 ```
 
 ## Shell Integration

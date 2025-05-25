@@ -21,7 +21,7 @@ Configure the provider in your `~/.abc.conf`:
 provider = aws-bedrock
 profile = abc-cli     # Optional: AWS credential profile name
 region = us-east-1    # Optional: AWS region (default: us-east-1)
-model = anthropic.claude-3-5-sonnet-20241022-v2:0  # Optional: Bedrock model ID
+model = anthropic.claude-sonnet-4-20250514-v1:0  # Optional: Bedrock model ID
 ```
 
 ### Configuration Options
@@ -31,7 +31,7 @@ model = anthropic.claude-3-5-sonnet-20241022-v2:0  # Optional: Bedrock model ID
   - If not specified, uses the default credential provider chain
   - See [AWS credentials configuration](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
 - `region` (optional): AWS region where Bedrock is available. Default: `us-east-1`
-- `model` (optional): The Bedrock model to use. Default: `anthropic.claude-3-5-sonnet-20241022-v2:0`
+- `model` (optional): The Bedrock model to use. Default: `anthropic.claude-sonnet-4-20250514-v1:0`
   - Currently supports Anthropic Claude models on Bedrock
 - `temperature` (optional): Controls randomness in command generation. Default: `0.0`
   - Range: 0.0 to 1.0

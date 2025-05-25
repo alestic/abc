@@ -5,7 +5,7 @@
 provider = anthropic
 # Anthropic API key from https://console.anthropic.com/settings/keys
 api_key = {ANTHROPIC_API_KEY}
-model = claude-3-5-sonnet-latest
+model = claude-sonnet-4-20250514
 
 # Example configurations for other providers:
 
@@ -13,7 +13,7 @@ model = claude-3-5-sonnet-latest
 # provider = aws-bedrock
 # profile = {AWS_PROFILE}  # ~/.aws/config profile name
 # region = us-east-1  # AWS region
-# model = us.anthropic.claude-3-5-sonnet-20241022-v2:0 # Bedrock inference profile
+# model = anthropic.claude-sonnet-4-20250514-v1:0 # Bedrock inference profile
 
 # [bedrock-nova-pro]  # AWS Bedrock Nova Pro config
 # provider = aws-bedrock

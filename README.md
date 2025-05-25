@@ -89,7 +89,7 @@ Configuration sections allow using different LLM providers and models:
 [default]
 provider = anthropic
 api_key = {ANTHROPIC_API_KEY}
-model = claude-3-5-sonnet-latest
+model = claude-sonnet-4-20250514
 
 [4o]  # GPT-4o config
 provider = openai

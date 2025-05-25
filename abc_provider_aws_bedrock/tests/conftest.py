@@ -42,7 +42,7 @@ def mock_config_full():
     return {
         "provider": "aws-bedrock",
         "profile": "abc-cli",
-        "model": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "model": "anthropic.claude-sonnet-4-20250514-v1:0",
         "region": "us-east-1",
         "temperature": "0.5",
         "max_tokens": "500",

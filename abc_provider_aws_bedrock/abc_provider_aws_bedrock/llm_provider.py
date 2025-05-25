@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 from abc_cli import LLMProvider
 
 PROVIDER_NAME = 'aws-bedrock'
-DEFAULT_MODEL = 'anthropic.claude-3-5-sonnet-20241022-v2:0'
+DEFAULT_MODEL = 'anthropic.claude-sonnet-4-20250514-v1:0'
 DEFAULT_TEMPERATURE = 0.0
 DEFAULT_MAX_TOKENS = 1000
 DEFAULT_REGION = 'us-east-1'

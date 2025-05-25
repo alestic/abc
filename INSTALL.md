@@ -161,7 +161,7 @@ The configuration file (`~/.abc.conf`) supports multiple named sections for diff
 [default]
 provider = anthropic
 api_key = {ANTHROPIC_API_KEY}
-model = claude-3-5-sonnet-latest
+model = claude-sonnet-4-20250514
 
 [o1]  # OpenAI o1 config
 provider = openai

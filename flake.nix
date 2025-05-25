@@ -16,7 +16,7 @@
         # Build the core abc-cli package
         abc-cli = python.pkgs.buildPythonApplication rec {
           pname = "abc-cli";
-          version = "1.0.0";
+          version = "2025.05.24";
           format = "pyproject";
 
           src = ./.;
@@ -55,7 +55,7 @@
         # Build provider packages
         abc-provider-anthropic = python.pkgs.buildPythonPackage rec {
           pname = "abc-provider-anthropic";
-          version = "1.0.0";
+          version = "2025.05.24";
           format = "pyproject";
 
           src = ./abc_provider_anthropic;
@@ -74,7 +74,7 @@
 
         abc-provider-aws-bedrock = python.pkgs.buildPythonPackage rec {
           pname = "abc-provider-aws-bedrock";
-          version = "1.0.0";
+          version = "2025.05.24";
           format = "pyproject";
 
           src = ./abc_provider_aws_bedrock;
@@ -233,7 +233,7 @@
                     provider = "anthropic";
                     anthropic = {
                       api_key = "sk-ant-...";
-                      model = "claude-3-5-sonnet-20241022";
+                      model = "claude-sonnet-4-20250514";
                     };
                   }
                 '';
