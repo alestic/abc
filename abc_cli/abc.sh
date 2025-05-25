@@ -1,4 +1,10 @@
 abc() {
+    # Check for --help and --version options for direct passthrough
+    if [ $# -gt 0 ] && ([ "$1" = "--help" ] || [ "$1" = "--version" ]); then
+        abc_generate "$@"
+        return $?
+    fi
+    
     local shell=bash
     if [ -n "$ZSH_VERSION" ]; then
         shell=zsh

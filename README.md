@@ -49,7 +49,21 @@ After installation and setup, you can use `abc` in two ways:
 
    In this example, you'd see `git commit --amend` in an editable prompt. You can modify it if needed, then press Enter to execute.
 
-2. Direct output mode:
+2. Quick access mode:
+
+   For help and version information, these options bypass the interactive prompt:
+
+   ```
+   $ abc --help
+   # Shows help and exits immediately
+
+   $ abc --version
+   # Shows version and exits immediately
+   ```
+
+   Other options like `--debug` will go through the normal interactive flow.
+
+3. Direct output mode:
 
    If you prefer to just see the generated command without executing it, use `abc_generate`. This will output the command without running it or presenting an interactive prompt.
 
@@ -274,11 +288,9 @@ Always review these warnings and dangerous commands carefully before execution.
 
 - Though the prompt command editing looks and acts a bit like the normal shell prompt, it is not completely compatible in every way in all shells for all user environments.
 
-- The danger level evaluation is based on the LLM's assessment and may not catch all potentially dangerous situations. Always use your own judgment when executing commands.
-
 ## BUGS
 
-- The command `abc --help` does not currently work when using the interactive bash function.
+- None currently known.
 
 ## GitHub project
 
