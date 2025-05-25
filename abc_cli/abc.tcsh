@@ -2,6 +2,13 @@ alias abc 'if ( "$1" == "--help" || "$1" == "--version" ) then; \
     abc_generate \!*; \
   else; \
     set __abc_cmd=`abc_generate --shell tcsh \!*`; \
+    set __abc_exit_code=$?; \
+    if ( $__abc_exit_code != 0 ) then; \
+        if ( "$__abc_cmd" != "" ) then; \
+            echo "$__abc_cmd"; \
+        endif; \
+        exit $__abc_exit_code; \
+    endif; \
     set __abc_prompt="`\tcsh -i < /dev/null | sed s/exit//`"; \
     set __abc_tmpfile=`\mktemp /tmp/__abc_$$.XXXXXX`; \
     \python3 -c "from prompt_toolkit import prompt;from prompt_toolkit.formatted_text import ANSI;import termios,sys;termios.tcflush(sys.stdin,termios.TCIFLUSH);a=sys.argv;open(a[3],'\''w'\'').write(prompt(ANSI(a[1]),default=a[2]))" "$__abc_prompt" "$__abc_cmd" "$__abc_tmpfile"; \

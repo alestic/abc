@@ -9,7 +9,15 @@ abc() {
     if [ -n "$ZSH_VERSION" ]; then
         shell=zsh
     fi
-    local abc_cmd=$(abc_generate --shell $shell "$@")
+    local abc_cmd
+    abc_cmd=$(abc_generate --shell $shell "$@")
+    local abc_exit_code=$?
+    if [ $abc_exit_code -ne 0 ]; then
+        if [ -n "$abc_cmd" ]; then
+            echo "$abc_cmd"
+        fi
+        return $abc_exit_code
+    fi
     local user_cmd=$abc_cmd
     while read -t 0.1 -n 1; do : ; done
     if [ -n "$ZSH_VERSION" ]; then
