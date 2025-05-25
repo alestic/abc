@@ -143,8 +143,13 @@ def get_provider(config: Dict[str, str]) -> LLMProvider:
 
 def process_generated_command(command: str) -> str:
     """Process the generated command based on its danger level.
-    Also handles special markup like CDATA tags from certain LLM providers."""
-    # First strip any CDATA wrapper if present
+    Also handles special markup like CDATA tags and markdown code blocks from certain LLM providers."""
+    # First strip markdown code block delimiters (lines starting with ```)
+    lines = command.splitlines()
+    filtered_lines = [line for line in lines if not line.strip().startswith('```')]
+    command = '\n'.join(filtered_lines).strip()
+    
+    # Then strip any CDATA wrapper if present
     cdata_pattern = r'<!\[CDATA\[(.*?)\]\]>'
     if re.search(cdata_pattern, command, re.DOTALL):
         command = re.sub(cdata_pattern, r'\1', command, flags=re.DOTALL).strip()
