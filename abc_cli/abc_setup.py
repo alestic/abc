@@ -39,6 +39,11 @@ SHELL_RC_FILES = {
     'tcsh': '.tcshrc'
 }
 
+# Bash-specific profile files checked in order (matches bash's own search order).
+# Login shells read the first of these that exists, but skip .bashrc.
+# .profile is excluded because it is also read by sh/dash where bash syntax would error.
+BASH_PROFILE_FILES = ['.bash_profile', '.bash_login']
+
 MARKER_BEGIN = "# >>> abc initialize >>>"
 MARKER_MIDDLE = "# !! Contents within this block are managed by 'abc_setup' !!"
 MARKER_END = "# <<< abc initialize <<<"
@@ -223,12 +228,26 @@ def write_rc_file(file_path, lines):
     with open(path, 'w') as f:
         f.writelines(lines)
 
-def try_modify_rc_file(file_path, source_line, remove=False, no_prompt=False):
+def find_bash_profile_file():
+    """Find the first existing bash profile file.
+
+    Checks in bash's own search order: .bash_profile, .bash_login.
+    Returns the filename (relative to home) or None if none exist.
+    """
+    for profile_file in BASH_PROFILE_FILES:
+        if (Path.home() / profile_file).exists():
+            return profile_file
+    return None
+
+def try_modify_rc_file(file_path, source_line, remove=False, no_prompt=False, create=False):
     """Check if modification is needed and perform it if required."""
     lines = read_rc_file(file_path)
+    file_exists = lines is not None
     if lines is None:
-        logging.info(f"Skipping {Path.home() / file_path}: file not found")
-        return False
+        if not create or remove:
+            logging.info(f"Skipping {Path.home() / file_path}: file not found")
+            return False
+        lines = []
 
     if not check_needs_modification(lines, source_line, remove):
         logging.info(f"Skipping {Path.home() / file_path}: no modification needed")
@@ -246,7 +265,7 @@ def try_modify_rc_file(file_path, source_line, remove=False, no_prompt=False):
             MARKER_END
         ]
     else:
-        description = f"About to modify {rc_path}"
+        description = f"About to {'modify' if file_exists else 'create'} {rc_path}"
         commands = [
             f"# Add/update block in {rc_path} to:",
             MARKER_BEGIN,
@@ -258,10 +277,11 @@ def try_modify_rc_file(file_path, source_line, remove=False, no_prompt=False):
     if not show_instructions_and_confirm(description, commands, no_prompt):
         return False
 
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    backup_path = rc_path.with_suffix(f'.bak_{timestamp}')
-    shutil.copy2(rc_path, backup_path)
-    logging.info(f"Created backup: {backup_path}")
+    if file_exists:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_path = Path(str(rc_path) + f'.bak_{timestamp}')
+        shutil.copy2(rc_path, backup_path)
+        logging.info(f"Created backup: {backup_path}")
 
     if remove:
         new_lines, _ = remove_abc_block(lines)
@@ -413,6 +433,49 @@ def setup_config(no_prompt=False, package_dir=None):
         logging.error(f"Configuration setup failed: {e}")
         return False
 
+def setup_bash_rc_files(source_line, share_dir, no_prompt):
+    """Set up bash shell integration for both login and non-login shells.
+
+    Returns True if files were modified, False if bash was detected but nothing
+    changed, or None if no bash files were found.
+    """
+    bashrc_exists = (Path.home() / '.bashrc').exists()
+    profile_file = find_bash_profile_file()
+    dot_profile_exists = (Path.home() / '.profile').exists()
+
+    # No bash-specific files found
+    if not bashrc_exists and not profile_file:
+        if dot_profile_exists:
+            logging.warning("Only ~/.profile found; cannot safely add bash integration")
+            print("\nWarning: Only ~/.profile was found for bash.")
+            print("Creating ~/.bash_profile would shadow ~/.profile, so abc won't do that.")
+            print("You can manually add this line to your shell's startup file:")
+            print(f'  source "{share_dir}/abc.sh"')
+        return None
+
+    modified = False
+
+    # .bashrc for non-login shells (Linux desktop terminals, subshells)
+    if try_modify_rc_file('.bashrc', source_line, no_prompt=no_prompt, create=True):
+        modified = True
+
+    # Profile file for login shells (macOS Terminal, SSH, TTY login)
+    if profile_file:
+        if try_modify_rc_file(profile_file, source_line, no_prompt=no_prompt):
+            modified = True
+    elif not dot_profile_exists:
+        # No profile files at all — safe to create .bash_profile
+        if try_modify_rc_file('.bash_profile', source_line, no_prompt=no_prompt, create=True):
+            modified = True
+    else:
+        # Only .profile exists — don't create .bash_profile (would shadow it)
+        print(f"\nNote: ~/.profile exists but no ~/.bash_profile.")
+        print("Login shells (macOS Terminal, SSH) may not load the abc function.")
+        print("You can add this line to ~/.bash_profile or ~/.profile:")
+        print(f'  source "{share_dir}/abc.sh"')
+
+    return modified
+
 def setup_shell_scripts(no_prompt=False):
     """Setup shell integration scripts and configuration template."""
     try:
@@ -467,13 +530,27 @@ def setup_shell_scripts(no_prompt=False):
 
         for shell, rc_file in SHELL_RC_FILES.items():
             source_line = f'source "{share_dir}/abc.{shell if shell == "tcsh" else "sh"}"'
-            rc_path = Path.home() / rc_file
-            if not rc_path.exists():
-                continue
-            found_shells.append(shell)
 
-            if try_modify_rc_file(rc_file, source_line, remove=False, no_prompt=no_prompt):
-                modified = True
+            if shell == 'bash':
+                result = setup_bash_rc_files(source_line, share_dir, no_prompt)
+                if result is not None:
+                    found_shells.append('bash')
+                    if result:
+                        modified = True
+            else:
+                # zsh and tcsh: single RC file covers both login and non-login
+                if not (Path.home() / rc_file).exists():
+                    continue
+                found_shells.append(shell)
+                if try_modify_rc_file(rc_file, source_line, no_prompt=no_prompt):
+                    modified = True
+
+        if not found_shells:
+            logging.warning("No shell configuration files found (.bashrc, .bash_profile, .zshrc, .tcshrc)")
+            print("\nWarning: No shell configuration files were found.")
+            print("The 'abc' command is a shell function that must be sourced.")
+            print("You can manually add this line to your shell's startup file:")
+            print(f'  source "{share_dir}/abc.sh"')
 
         if modified:
             print("\nShell configuration files have been updated.")
@@ -516,19 +593,18 @@ def uninstall(no_prompt=False):
                 shutil.rmtree(share_dir)
                 logging.info(f"Removed directory: {share_dir}")
 
-        # Show RC file cleanup instructions
+        # Clean abc blocks from all RC files (including bash profile files)
+        all_rc_files = list(SHELL_RC_FILES.values()) + list(BASH_PROFILE_FILES)
         description = "About to remove abc commands from shell RC files"
         commands = ["# Will remove abc blocks from:"]
-        for shell, rc_file in SHELL_RC_FILES.items():
+        existing_rc_files = []
+        for rc_file in all_rc_files:
             rc_path = Path.home() / rc_file
             if rc_path.exists():
                 commands.append(f"- ~/{rc_file}")
-        if show_instructions_and_confirm(description, commands, no_prompt):
-            for shell, rc_file in SHELL_RC_FILES.items():
-                rc_path = Path.home() / rc_file
-                if not rc_path.exists():
-                    continue
-                found_shells.append(shell)
+                existing_rc_files.append(rc_file)
+        if existing_rc_files and show_instructions_and_confirm(description, commands, no_prompt):
+            for rc_file in existing_rc_files:
                 if try_modify_rc_file(rc_file, '', remove=True, no_prompt=no_prompt):
                     modified = True
 

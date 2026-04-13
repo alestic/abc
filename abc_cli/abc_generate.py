@@ -29,7 +29,7 @@ from .prompts import get_system_prompt
 # Entry point group for LLM providers
 PROVIDER_ENTRY_POINT = 'abc.llm_providers'
 
-VERSION: str = "abc (AI Bash Command) version 2025.09.04"
+VERSION: str = "abc (AI Bash Command) version 2026.04.12"
 PROGRAM_NAME: str = "abc"
 
 # Config file
