@@ -4,7 +4,16 @@ abc() {
         abc_generate "$@"
         return $?
     fi
-    
+
+    # Interactive editing needs read -i, read -t fractional timeouts, and ${PS1@P} (bash 4.4+).
+    if [ -z "$ZSH_VERSION" ] && [ -n "$BASH_VERSION" ]; then
+        if [ "${BASH_VERSINFO[0]}" -lt 4 ] || { [ "${BASH_VERSINFO[0]}" -eq 4 ] && [ "${BASH_VERSINFO[1]}" -lt 4 ]; }; then
+            echo "abc: bash $BASH_VERSION is too old; abc requires bash 4.4 or newer (or use zsh)." >&2
+            echo "abc: on macOS, install a newer bash with: brew install bash" >&2
+            return 1
+        fi
+    fi
+
     local shell=bash
     if [ -n "$ZSH_VERSION" ]; then
         shell=zsh
