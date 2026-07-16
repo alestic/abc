@@ -5,8 +5,7 @@ from typing import Dict, Any
 
 from abc_cli import LLMProvider
 
-DEFAULT_MODEL = 'claude-opus-4-5'
-DEFAULT_TEMPERATURE = 0.0
+DEFAULT_MODEL = 'claude-opus-4-8'
 DEFAULT_MAX_TOKENS = 1000
 
 class AnthropicProvider(LLMProvider):
@@ -23,7 +22,12 @@ class AnthropicProvider(LLMProvider):
 
         self.api_key = config['api_key']
         self.model = config.get('model', DEFAULT_MODEL)
-        self.temperature = float(config.get('temperature', DEFAULT_TEMPERATURE))
+        # Newer Claude models (Opus 4.7+, Sonnet 5, Fable 5) reject the
+        # `temperature` parameter. Only send it when the user explicitly
+        # configures one; otherwise omit it entirely.
+        self.temperature = (
+            float(config['temperature']) if 'temperature' in config else None
+        )
         self.max_tokens = int(config.get('max_tokens', DEFAULT_MAX_TOKENS))
         self.client = anthropic.Anthropic(api_key=self.api_key)
 
@@ -34,12 +38,11 @@ class AnthropicProvider(LLMProvider):
         system_prompt: str,
     ) -> str:
         """Generate command using Anthropic Claude."""
-        message = self.client.messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-            system=system_prompt,
-            messages=[
+        request_params = {
+            "model": self.model,
+            "max_tokens": self.max_tokens,
+            "system": system_prompt,
+            "messages": [
                 {
                     "role": "user",
                     "content": [
@@ -50,7 +53,11 @@ class AnthropicProvider(LLMProvider):
                     ]
                 }
             ]
-        )
+        }
+        if self.temperature is not None:
+            request_params["temperature"] = self.temperature
+
+        message = self.client.messages.create(**request_params)
         return message.content[0].text.strip()
 
     def get_config_schema(self) -> Dict:
@@ -74,8 +81,7 @@ class AnthropicProvider(LLMProvider):
                 },
                 "temperature": {
                     "type": "string",
-                    "description": "Sampling temperature",
-                    "default": DEFAULT_TEMPERATURE
+                    "description": "Sampling temperature (omitted unless set; unsupported by newer Claude models)"
                 },
                 "max_tokens": {
                     "type": "string",
