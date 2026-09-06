@@ -1,6 +1,6 @@
 """Run local Promptfoo comparisons using abc's providers.
 
-[Created with AI: Codex with GPT-6 Astra]
+[Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1]
 """
 import argparse
 import configparser
@@ -14,6 +14,7 @@ import sys
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent))
 from abc_cli.abc_generate import get_config, get_config_file
+from evals.behavior import CHECKS, check_available
 from evals.pricing import fetch_snapshot
 PROMPTFOO = ['npx', '--yes', '--package=node@22.22.0',
              '--package=promptfoo@0.122.2', 'promptfoo']
@@ -95,8 +96,7 @@ def main():
         if set(selected) - names:
             parser.error('Unknown CASES: ' + ', '.join(sorted(set(selected) - names)))
         cases['tests'] = [case for case in cases['tests'] if case['description'] in selected]
-    if any(case['vars'].get('behavior') for case in cases['tests']):
-        from evals.behavior import check_available
+    if not args.smoke and any(case['vars'].get('behavior') for case in cases['tests']):
         try:
             check_available()
         except ValueError as error:
@@ -123,8 +123,7 @@ def main():
             case['assert'] = [{'type': 'python', 'metric': 'Word ' + name,
                               'value': 'file://' + str(ROOT / 'checks.py') + ':behavior_check',
                               'config': {'check': name}}
-                             for name in ('scope', 'counting', 'selection', 'empty', 'no_candidate',
-                                          'empty_file', 'sparse', 'filenames', 'read_only')]
+                             for name in CHECKS]
     config = {
         'description': 'abc model comparison: automated checks plus manual correctness review',
         'metadata': {'sourceRevision': subprocess.check_output(

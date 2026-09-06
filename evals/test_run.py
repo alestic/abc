@@ -1,6 +1,6 @@
 """Smoke configuration must require every binary assertion to pass.
 
-[Created with AI: Codex with GPT-6 Astra]
+[Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1]
 """
 import json
 from pathlib import Path
@@ -15,11 +15,10 @@ def test_smoke_config_requires_all_checks(tmp_path, monkeypatch):
     monkeypatch.setenv('MODELS', 'claude-sonnet-5')
     monkeypatch.setenv('REPEAT', '1')
     monkeypatch.setenv('CASES', 'markdown-word')
-    with patch('evals.behavior.check_available'), \
-            patch('subprocess.check_output', side_effect=['revision', '']), \
+    with patch('subprocess.check_output', side_effect=['revision', '']), \
             patch('subprocess.call', return_value=1):
         assert run.main() == 1
     config = json.loads((tmp_path / '.results/config.json').read_text())
     assert config['defaultTest']['threshold'] == 1
     checks = {item['config']['check'] for item in config['tests'][0]['assert']}
-    assert {'empty_file', 'sparse', 'filenames', 'read_only'} <= checks
+    assert checks == set(run.CHECKS)

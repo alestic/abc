@@ -1,6 +1,6 @@
 """Promptfoo adapter; uses the application prompt and provider unchanged.
 
-[Created with AI: Codex with GPT-6 Astra]
+[Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1]
 """
 import os
 import re
@@ -21,12 +21,8 @@ sys.path.insert(0, str(ROOT / 'abc_provider_openai'))
 def call_api(prompt, options, context):
     config = options['config']
     case = context['vars']
-    if config.get('smoke') and not case.get('behavior'):
-        return {'output': case['example'], 'metadata': {'offline': True}}
     if config.get('smoke'):
-        result = {'output': case['example'], 'metadata': {'offline': True}}
-        add_behavior(result, case)
-        return result
+        return {'output': case['example'], 'metadata': {'offline': True}}
     name = config['provider']
     settings = {'provider': name, 'api_key': os.environ[name.upper() + '_API_KEY'],
                 'model': config['model'], 'max_tokens': str(config['max_tokens'])}

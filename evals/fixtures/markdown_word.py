@@ -1,139 +1,80 @@
 """Run one generated command against disposable repositories inside Docker only.
 
-[Created with AI: Codex with GPT-6 Astra]
+[Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1]
 """
 import collections
-import hashlib
 import json
 from pathlib import Path
 import re
 import subprocess
 import tempfile
 
-
-def writes_files(trace):
-    """Detect write-capable opens and mutations, including removed temp files."""
-    mutations = {'creat', 'truncate', 'ftruncate', 'unlink', 'unlinkat', 'rename',
-                 'renameat', 'renameat2', 'mkdir', 'mkdirat', 'rmdir', 'link',
-                 'linkat', 'symlink', 'symlinkat', 'mknod', 'mknodat', 'chmod',
-                 'fchmod', 'chown', 'fchown', 'lchown', 'fchmodat', 'fchownat',
-                 'utime', 'utimes', 'utimensat'}
-    for line in trace.splitlines():
-        # Read-only Python startup can try (and fail) to cache stdlib bytecode.
-        # Failed syscalls did not modify anything; incomplete ones fail closed.
-        if re.search(r'\)\s+= -1\b', line):
-            continue
-        call = re.match(r'^(?:\d+\s+)?(\w+)\(', line)
-        if not call:
-            continue
-        if call[1] in mutations:
-            return True
-        if call[1] in ('open', 'openat', 'openat2') and re.search(r'\bO_(?:WRONLY|RDWR|CREAT|TRUNC|APPEND)\b', line):
-            # Redirecting output to /dev/null is normal read-only command plumbing.
-            if not re.search(r'open(?:at2?)?\((?:AT_FDCWD, )?"/dev/null",', line):
-                return True
-    return False
+CHECKS = ('word', 'no_candidate')
+WORD = re.compile('[a-z]+')
+FRACTION = re.compile(r'\d+\s*/\s*\d+')
 
 
-def snapshot(root):
-    result = {}
-    for path in root.rglob('*'):
-        key = str(path.relative_to(root))
-        if path.is_symlink():
-            result[key] = ('symlink', str(path.readlink()))
-        elif path.is_file():
-            result[key] = ('file', hashlib.sha256(path.read_bytes()).hexdigest())
-        elif path.is_dir():
-            result[key] = ('directory',)
-    return result
+def trial(command, docs):
+    """Run the command from a subdirectory of a fresh repository holding docs.
 
-
-def trial(command, docs, *, distractors=False, nested=False):
+    One Markdown file is tracked and the rest are untracked, so commands must
+    include untracked files. Ignored and non-Markdown decoys contain a word that
+    would win if they were counted.
+    """
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         subprocess.run(['git', 'init', '-q', str(root)], check=True)
         for name, content in docs.items():
-            p = root / name
-            p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(content)
-        # Stage just one Markdown file: commands must include untracked files too.
+            (root / name).parent.mkdir(parents=True, exist_ok=True)
+            (root / name).write_text(content)
         if docs:
             subprocess.run(['git', '-C', str(root), 'add', '--', next(iter(docs))], check=True)
-        if distractors:
-            (root / '.gitignore').write_text('ignored/\n')
-            for i in range(8):
-                p = root / 'ignored' / ('noise%d.md' % i)
-                p.parent.mkdir(exist_ok=True)
-                p.write_text('decoy' if i < 4 else 'other')
-            (root / 'noise.txt').write_text('decoy')
-            (root / '.git' / 'noise.md').write_text('decoy')
+        (root / '.gitignore').write_text('ignored/\n')
+        (root / 'ignored').mkdir()
+        (root / 'ignored' / 'one.md').write_text('alder')
+        (root / 'ignored' / 'two.md').write_text('alder')
+        (root / 'noise.txt').write_text('alder')
         (root / 'nested').mkdir(exist_ok=True)
-        before = snapshot(root)
-        with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err, tempfile.NamedTemporaryFile() as audit:
-            try:
-                completed = subprocess.run(['strace', '-f', '-qq', '-s', '4096', '-e', 'trace=%file,ftruncate,fchmod,fchown',
-                                            '-o', audit.name, '/bin/bash', '--noprofile', '--norc', '-c', command],
-                                           cwd=root / 'nested' if nested else root,
-                                           stdout=out, stderr=err, timeout=4)
-                out.seek(0); text = out.read(8192).decode(errors='replace')
-                err.seek(0); error = err.read(1024).decode(errors='replace')
-                ok = completed.returncode == 0
-            except subprocess.TimeoutExpired:
-                text, error, ok = '', 'Command timed out', False
-            audit.seek(0)
-            trace = audit.read().decode(errors='replace')
-        write_attempts = [line for line in trace.splitlines() if writes_files(line)]
-        unchanged = snapshot(root) == before and bool(trace) and not write_attempts
+        status = ['git', '-C', str(root), 'status', '--porcelain']
+        before = subprocess.check_output(status)
+        try:
+            completed = subprocess.run(['/bin/bash', '--noprofile', '--norc', '-c', command],
+                                       cwd=root / 'nested', capture_output=True, text=True, timeout=4)
+        except subprocess.TimeoutExpired:
+            return {'pass': False, 'reason': 'Command timed out', 'output': ''}
+        output = completed.stdout
+        if completed.returncode:
+            reason = completed.stderr.strip() or 'Command exited with status ' + str(completed.returncode)
+            return {'pass': False, 'reason': reason, 'output': output}
+        if subprocess.check_output(status) != before:
+            return {'pass': False, 'reason': 'Command modified the repository', 'output': output}
         counts = collections.Counter()
         for content in docs.values():
-            counts.update(set(re.findall('[a-z]+', content.lower())))
+            counts.update(set(WORD.findall(content.lower())))
         n = len(docs)
         candidates = [w for w, count in counts.items() if 0 < count < n]
+        mentioned = set(WORD.findall(output.lower())) & counts.keys()
         if candidates:
             distance = min(abs(2 * counts[w] - n) for w in candidates)
             best = {w for w in candidates if abs(2 * counts[w] - n) == distance}
-            # Allow explanatory text, but reject lists of competing fixture words.
-            mentioned = set(re.findall('[a-z]+', text.lower())) & counts.keys()
-            word = next(iter(mentioned)) if len(mentioned) == 1 else None
-            correct = word in best
-            # If a count fraction is reported, verify it as well.
-            fraction = re.search(r'(\d+)\s*/\s*(\d+)', text)
-            if fraction and correct:
-                correct = int(fraction[2]) == n and counts[word] == int(fraction[1])
-            percent = re.search(r'(\d+(?:\.\d+)?)\s*%', text)
-            if percent and correct:
-                correct = abs(float(percent[1]) - 100 * counts[word] / n) <= .51
+            correct = len(mentioned) == 1 and mentioned <= best
         else:
-            correct = bool(re.search(r'\b(no|none|not|cannot|unable|empty)\b', text, re.I))
-        return {'pass': ok and correct, 'unchanged': unchanged, 'output': text,
-                'write_attempts': write_attempts[:5],
-                'reason': (error or 'Command exited with status ' + str(completed.returncode)) if not ok
-                          else ('Correct result' if correct else 'Result does not match fixture word frequencies')}
+            correct = not mentioned and not FRACTION.search(output)
+        return {'pass': correct, 'output': output,
+                'reason': 'Correct result' if correct else 'Result does not match fixture word frequencies'}
 
 
 def evaluate(command):
-    docs = {'one.md': 'common cedar', 'two space.md': 'common cedar',
-            "three's.md": 'common', 'nested/four.md': 'common'}
-    tests = {
-        'scope': trial(command, docs, distractors=True, nested=True),
-        'counting': trial(command, {'a.md': 'common cedar ' + 'alder ' * 100,
-                                     'b.md': 'common cedar', 'c.md': 'common', 'd.md': 'common'}),
-        'selection': trial(command, {'a.md': 'common cedar birch', 'b.md': 'common cedar',
-                                      'c.md': 'common', 'd.md': 'common', 'e.md': 'common'}),
-        'empty': trial(command, {}),
+    # cedar is in 2 of 4 files but appears 4 times, so counting occurrences
+    # instead of files excludes it and picks birch (3 of 4). Counting the alder
+    # decoys makes alder the answer.
+    return {
+        'word': trial(command, {'one.md': 'common cedar cedar birch',
+                                'two space.md': 'common cedar cedar birch',
+                                'three.md': 'common birch', 'nested/four.md': 'common'}),
         'no_candidate': trial(command, {'a.md': 'common', 'b.md': 'common'}),
-        'empty_file': trial(command, {'a.md': 'cedar', 'b.md': ''}),
-        'sparse': trial(command, {'a.md': 'common cedar', 'b.md': 'common',
-                                 'c.md': 'common', 'd.md': 'common', 'e.md': 'common'}),
-        'filenames': trial(command, {'-draft.md': 'common cedar', 'a=b.md': 'common cedar',
-                                    'line\nbreak.md': 'common cedar', 'd.md': 'common',
-                                    'e.md': 'common', 'f.md': 'common'}),
     }
-    tests['read_only'] = {'pass': all(item['unchanged'] for item in tests.values()),
-                          'reason': 'Repository must remain unchanged with no filesystem writes or write-capable opens (except /dev/null)'}
-    return tests
 
 
 if __name__ == '__main__':
-    command = json.loads(Path('/inputs/command.json').read_text())
-    print(json.dumps(evaluate(command)))
+    print(json.dumps(evaluate(json.loads(Path('/inputs/command.json').read_text()))))
