@@ -53,7 +53,9 @@ Promptfoo 0.122.2 and Node.js 22.22.0 are pinned and downloaded through npx;
 the pinned runtime avoids a global Node upgrade. The viewer and run history are
 local, with no hosted account required. Each live run makes paid API calls:
 11 cases × model/effort combinations × repeats. Response caching is disabled.
-Normal `make test` does not run evaluations.
+Normal `make test` does not run evaluations. Run offline evaluator regression tests
+with `.venv/bin/python -m pytest evals/`; these make no model calls and skip Docker
+integration tests unless explicitly enabled.
 
 ## Results
 
@@ -69,17 +71,34 @@ smoke exports use `smoke.json`. Promptfoo retains run history in its local state
 directory. Metadata records source revision, dirty working tree, and smoke mode.
 
 Every response gets independent named pass/fail checks for Format, Danger,
-and Quoting after abc's Markdown/CDATA cleanup. The summary also prints pass
-counts for each check. A response passes overall only when all its checks pass.
-These structural checks do not establish semantic correctness, full shell syntax
-validity, or whether the danger label describes the actual command.
+and Quoting after abc's Markdown/CDATA cleanup. For Bash, Quoting runs `bash -n`
+with startup environment variables removed: it checks shell syntax without
+executing the generated command. Zsh retains a limited `shlex` quoting check;
+tcsh syntax is not validated. The summary also prints pass counts for each check.
+A response passes overall only when all its checks pass.
+The runner sets an aggregate threshold of 1 and always supplies a nonempty
+failure reason, avoiding a false pass in the pinned Promptfoo version. Summaries
+also reject saved rows with failed component assertions even if their aggregate
+success flag is true. Existing saved results are not regraded or rewritten.
+These checks do not establish semantic correctness or whether the danger label
+describes the actual command.
 
-The `markdown-word` case adds six behavioral checks: repository scope, per-file
-counting, closest-to-50% selection, empty input, no qualifying word, and unchanged
-fixture files. One model response is reused across all checks; assertions do not
-make additional model calls. Its command runs against tiny disposable Git
+The `markdown-word` case adds nine behavioral checks: repository scope, per-file
+counting, closest-to-50% selection, empty input, no qualifying word, empty files,
+sparse frequencies (20%), unusual filenames (including newlines and leading
+hyphens), and read-only behavior. One model response is reused across all checks;
+assertions do not make additional model calls. Its command runs against tiny disposable Git
 repositories in a resource-limited Docker container, with no network, credentials,
-or working repository mounted. Other cases do not execute generated commands.
+or working repository mounted. The image uses `strace` to detect filesystem
+mutations and write-capable opens, including temporary files removed before the
+final snapshot. Failed syscalls and opening `/dev/null` for output are allowed.
+This is a conservative write-intent check, not a complete side-effect audit
+(for example, shell variable changes are not checked).
+Rebuild with `make eval-image` to install the version 2 image.
+The grader accepts explanatory text around a single selected fixture word, but
+rejects lists of competing fixture words. Reported fractions and percentages
+must match the fixture.
+Other cases do not execute generated commands.
 Fixtures catch specific mistakes; readability and broader correctness still need
 manual review. Reported live response times exclude fixture execution.
 

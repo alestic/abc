@@ -123,7 +123,8 @@ def main():
             case['assert'] = [{'type': 'python', 'metric': 'Word ' + name,
                               'value': 'file://' + str(ROOT / 'checks.py') + ':behavior_check',
                               'config': {'check': name}}
-                             for name in ('scope', 'counting', 'selection', 'empty', 'no_candidate', 'read_only')]
+                             for name in ('scope', 'counting', 'selection', 'empty', 'no_candidate',
+                                          'empty_file', 'sparse', 'filenames', 'read_only')]
     config = {
         'description': 'abc model comparison: automated checks plus manual correctness review',
         'metadata': {'sourceRevision': subprocess.check_output(
@@ -137,7 +138,7 @@ def main():
                                       pricing=pricing['models'].get(combination['model']))}
                       for model, combination in zip(models, combinations)],
         'tests': cases['tests'],
-        'defaultTest': {'assert': [{'type': 'python', 'metric': name,
+        'defaultTest': {'threshold': 1, 'assert': [{'type': 'python', 'metric': name,
                                    'value': 'file://' + str(ROOT / 'checks.py') + ':' + function}
                                   for name, function in [('Format', 'format_check'),
                                                          ('Danger', 'danger_check'),

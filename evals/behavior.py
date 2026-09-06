@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 import uuid
 
-IMAGE = 'abc-eval-fixtures:1'
+IMAGE = 'abc-eval-fixtures:2'
 
 
 def check_available():
@@ -33,7 +33,7 @@ def evaluate(command):
                 '--mount', 'type=bind,src=' + str(path) + ',dst=/inputs,readonly',
                 IMAGE, 'python3', '/inputs/runner.py']
         try:
-            result = subprocess.run(args, capture_output=True, text=True, timeout=35)
+            result = subprocess.run(args, capture_output=True, text=True, timeout=50)
             if result.returncode:
                 return {'error': 'Fixture container failed: ' + result.stderr[-1000:]}
             return json.loads(result.stdout)
