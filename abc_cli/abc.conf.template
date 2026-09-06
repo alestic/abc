@@ -17,6 +17,12 @@ reasoning_effort = low
 # reasoning_effort = minimal  # Optional: none, minimal, low, medium, high, xhigh, max
 # api = chat_completions  # Optional: chat_completions or responses
 
+# [claude]  # Anthropic Claude config
+# provider = anthropic
+# api_key = {ANTHROPIC_API_KEY}  # Anthropic API key from https://console.anthropic.com/settings/keys
+# model = claude-sonnet-5
+# effort = low  # Optional: low, medium, high, max (supported models only)
+
 # [bedrock-claude]  # AWS Bedrock Claude config
 # provider = aws-bedrock
 # profile = {AWS_PROFILE}  # ~/.aws/config profile name
@@ -33,4 +39,4 @@ reasoning_effort = low
 # - Default: abc "your command description"
 # - Specific config: abc --use openai-gpt-5 "your command description"
 
-# [Created with AI: Codex with GPT-6 Astra]
+# [Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1]

@@ -119,7 +119,20 @@ model = gpt-4o
 provider = openai
 api_key = {OPENAI_API_KEY}
 model = gpt-5
+
+[claude]  # Anthropic Claude config
+provider = anthropic
+api_key = {ANTHROPIC_API_KEY}
+model = claude-sonnet-5
+effort = low
 ```
+
+Reasoning effort is optional and provider-specific:
+
+- OpenAI: `reasoning_effort` accepts none, minimal, low, medium, high, xhigh,
+  or max. Defaults to low for Astra and minimal for GPT-5 models.
+- Anthropic: `effort` accepts low, medium, high, or max on models that support
+  it. Omitted unless set.
 
 Use different configurations with the --use option:
 ```bash
@@ -131,9 +144,10 @@ abc --use 4o "list files by size"
 
 # Use OpenAI GPT-5 config
 abc --use gpt-5 "list files by size"
-```
 
-Note: The OpenAI LLM provider plugin for `abc` has not yet been published.
+# Use Anthropic Claude config
+abc --use claude "list files by size"
+```
 
 ## Examples
 
