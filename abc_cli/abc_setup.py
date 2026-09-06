@@ -378,7 +378,7 @@ def setup_config(no_prompt=False, package_dir=None):
             f"chmod 600 {xdg_config}",
             "",
             "# Then edit to add your API key:",
-            f"$EDITOR {xdg_config}  # Add your API key from https://console.anthropic.com/settings/keys"
+            f"$EDITOR {xdg_config}  # Add your API key from https://platform.openai.com/api-keys"
         ]
         if not show_instructions_and_confirm(description, commands, no_prompt, default=False):
             return True
@@ -409,18 +409,19 @@ def setup_config(no_prompt=False, package_dir=None):
                 f"chmod 600 {xdg_config}",
                 "",
                 "# Then edit to add your API key:",
-                f"$EDITOR {xdg_config}  # Add your API key from https://console.anthropic.com/settings/keys"
+                f"$EDITOR {xdg_config}  # Add your API key from https://platform.openai.com/api-keys"
             ]
             if not show_instructions_and_confirm(description, commands, no_prompt):
                 return False
 
         # Prompt for API key if interactive
-        print("\nPlease enter your Anthropic API key", file=sys.stderr)
-        print("(You can get this from https://console.anthropic.com/settings/keys)", file=sys.stderr)
-        api_key = get_terminal_input("API key: ", '{ANTHROPIC_API_KEY}', sensitive=True)
+        print("\nPlease enter your OpenAI API key", file=sys.stderr)
+        print("(You can get this from https://platform.openai.com/api-keys)", file=sys.stderr)
+        api_key = get_terminal_input("API key: ", '{OPENAI_API_KEY}', sensitive=True)
 
         # Write configuration
-        config_content = template_content.replace('{ANTHROPIC_API_KEY}', api_key)
+        # Only the [default] section takes the key; commented examples keep the placeholder.
+        config_content = template_content.replace('{OPENAI_API_KEY}', api_key, 1)
         with open(xdg_config, 'w') as f:
             f.write(config_content)
 
@@ -664,3 +665,5 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+
+# [Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1]

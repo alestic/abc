@@ -16,7 +16,7 @@
         # Build the core abc-cli package
         abc-cli = python.pkgs.buildPythonApplication rec {
           pname = "abc-cli";
-          version = "2026.09.06";
+          version = "2026.09.06.1";
           format = "pyproject";
 
           src = ./.;
@@ -55,7 +55,7 @@
         # Build provider packages
         abc-provider-anthropic = python.pkgs.buildPythonPackage rec {
           pname = "abc-provider-anthropic";
-          version = "2026.09.06";
+          version = "2026.09.06.1";
           format = "pyproject";
 
           src = ./abc_provider_anthropic;
@@ -72,9 +72,20 @@
           pythonImportsCheck = [ "abc_provider_anthropic" ];
         };
 
+        # [Created with AI: Codex with GPT-6 Astra]
+        abc-provider-openai = python.pkgs.buildPythonPackage rec {
+          pname = "abc-provider-openai";
+          version = "2026.09.06.1";
+          format = "pyproject";
+          src = ./abc_provider_openai;
+          nativeBuildInputs = with python.pkgs; [ hatchling ];
+          propagatedBuildInputs = with python.pkgs; [ openai abc-cli ];
+          pythonImportsCheck = [ "abc_provider_openai" ];
+        };
+
         abc-provider-aws-bedrock = python.pkgs.buildPythonPackage rec {
           pname = "abc-provider-aws-bedrock";
-          version = "2026.09.06";
+          version = "2026.09.06.1";
           format = "pyproject";
 
           src = ./abc_provider_aws_bedrock;
@@ -101,11 +112,13 @@
             wrapProgram $out/bin/abc_generate \
               --prefix PYTHONPATH : "${python.pkgs.makePythonPath [
                 abc-provider-anthropic
+                abc-provider-openai
                 abc-provider-aws-bedrock
               ]}"
             wrapProgram $out/bin/abc_setup \
               --prefix PYTHONPATH : "${python.pkgs.makePythonPath [
                 abc-provider-anthropic
+                abc-provider-openai
                 abc-provider-aws-bedrock
               ]}"
             
@@ -125,6 +138,7 @@
             pythonPath = python.pkgs.makePythonPath [
               abc-cli
               abc-provider-anthropic
+              abc-provider-openai
               abc-provider-aws-bedrock
             ];
           };
@@ -160,6 +174,7 @@
           default = abc-with-providers;
           abc-cli = abc-cli;
           abc-provider-anthropic = abc-provider-anthropic;
+          abc-provider-openai = abc-provider-openai;
           abc-provider-aws-bedrock = abc-provider-aws-bedrock;
           abc-shell-setup = shellIntegrationSetup;
         };
@@ -171,6 +186,7 @@
               click
               tomli
               anthropic
+              openai
               boto3
               pytest
               pytest-cov

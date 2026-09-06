@@ -2,11 +2,11 @@
 # See: https://getabc.sh/
 
 [default]
-provider = anthropic
-# Anthropic API key from https://console.anthropic.com/settings/keys
-api_key = {ANTHROPIC_API_KEY}
-model = claude-sonnet-4-0
-# effort = low  # Optional: low, medium, high, or max on models that support it
+provider = openai
+# OpenAI API key from https://platform.openai.com/api-keys
+api_key = {OPENAI_API_KEY}
+model = gpt-6-astra
+reasoning_effort = low
 
 # Example configurations for other providers:
 
@@ -32,3 +32,5 @@ model = claude-sonnet-4-0
 # Usage:
 # - Default: abc "your command description"
 # - Specific config: abc --use openai-gpt-5 "your command description"
+
+# [Created with AI: Codex with GPT-6 Astra]

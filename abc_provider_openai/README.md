@@ -1,6 +1,6 @@
 # OpenAI Provider for abc
 
-[Created by AI: Claude Code]
+[Created by AI: Claude Code, Codex with GPT-6 Astra]
 
 This package provides OpenAI/ChatGPT integration for the abc (AI Bash Command) tool.
 
@@ -24,7 +24,8 @@ Add an OpenAI configuration section to your `~/.abc.conf` file:
 [default]
 provider = openai
 api_key = {OPENAI_API_KEY}
-model = gpt-5
+model = gpt-6-astra
+reasoning_effort = low
 
 [gpt-4o]
 provider = openai
@@ -34,7 +35,8 @@ model = gpt-4o
 
 ### Supported Models
 
-- `gpt-5` (default)
+- `gpt-6-astra` (default)
+- `gpt-5`
 - `gpt-4o`
 - `gpt-4-turbo`
 - Other OpenAI chat completion models
@@ -43,12 +45,12 @@ model = gpt-4o
 
 - `provider`: Must be "openai"
 - `api_key`: Your OpenAI API key (required)
-- `model`: Model to use (optional, defaults to gpt-5)
+- `model`: Model to use (optional, defaults to gpt-6-astra)
 - `temperature`: Sampling temperature 0.0-2.0 (optional, default: 0.0, omitted for newer models that don't support 0.0)
-- `max_tokens`: Maximum response tokens (optional, default: 1000). A response cut off at this limit is an error, not a partial command.
+- `max_tokens`: Maximum response tokens (optional, default: 4096, including reasoning tokens). A response cut off at this limit is an error, not a partial command.
 - `timeout`: Request timeout in seconds (optional, default: 120)
 - `organization`: OpenAI organization ID (optional)
-- `reasoning_effort`: Reasoning effort, sent whenever set: none, minimal, low, medium, high, xhigh, max (optional, default: minimal for GPT-5 models, otherwise the API default; set it empty to use the API default on GPT-5 too)
+- `reasoning_effort`: Reasoning effort, sent whenever set: none, minimal, low, medium, high, xhigh, max (optional, default: low for Astra, minimal for GPT-5 models, otherwise the API default; set it empty to use the API default on GPT-5 too)
 - `api`: OpenAI API to call, `chat_completions` or `responses` (optional, default: chat_completions)
 
 ## Usage

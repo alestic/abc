@@ -95,7 +95,7 @@ def test_first_matching_section(tmp_path, monkeypatch):
     for key in ('ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'ABC_SECTION', 'ABC_OPENAI_SECTION'):
         monkeypatch.delenv(key, raising=False)
     assert get_api_key('openai') == 'gpt-first'
-    assert get_api_key('anthropic') == 'claude-first'
+    assert get_api_key('anthropic') == 'claude-second'
     monkeypatch.setenv('ABC_OPENAI_SECTION', '')
     assert get_api_key('openai') == 'gpt-first'
     monkeypatch.setenv('ABC_OPENAI_SECTION', 'second-gpt')

@@ -56,10 +56,10 @@ def get_api_key(provider='anthropic'):
         with open(path) as source:
             sections.read_file(source)
         config = next((dict(sections[name]) for name in sections.sections()
-                       if sections[name].get('provider', 'anthropic') == provider), None)
+                       if sections[name].get('provider') == provider), None)
         if config is None:
             raise ValueError('No config section matches ' + provider)
-    if config.get('provider', 'anthropic') != provider:
+    if config.get('provider') != provider:
         raise ValueError('Selected config section has the wrong provider')
     if not config.get('api_key', '').strip():
         raise ValueError('Selected config section has no api_key')
