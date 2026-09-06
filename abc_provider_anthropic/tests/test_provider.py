@@ -40,7 +40,7 @@ def test_init_minimal_config():
     provider = AnthropicProvider(MOCK_CONFIG)
     assert provider.api_key == MOCK_API_KEY
     assert provider.model == DEFAULT_MODEL
-    assert provider.temperature == 0.0
+    assert provider.temperature is None
     assert provider.max_tokens == 1000
 
 def test_init_full_config():
@@ -54,7 +54,7 @@ def test_init_full_config():
 def test_init_missing_api_key():
     """Test provider initialization fails without API key."""
     with pytest.raises(KeyError):
-        AnthropicProvider({})
+        AnthropicProvider({"provider": "anthropic"})
 
 def test_get_config_schema():
     """Test config schema is valid and complete."""
@@ -96,6 +96,27 @@ def test_generate_command(mock_anthropic):
     assert call_kwargs["system"] == "You are a CLI assistant"
     assert len(call_kwargs["messages"]) == 1
     assert "list files" in call_kwargs["messages"][0]["content"][0]["text"]
+    # Temperature must be omitted by default — newer Claude models reject it
+    assert "temperature" not in call_kwargs
+
+@patch('anthropic.Anthropic')
+def test_generate_command_with_temperature(mock_anthropic):
+    """Test temperature is sent only when explicitly configured."""
+    mock_message = Mock()
+    mock_message.content = [Mock(text="ls -l\n##DANGERLEVEL=0## Safe command")]
+    mock_client = Mock()
+    mock_client.messages.create.return_value = mock_message
+    mock_anthropic.return_value = mock_client
+
+    provider = AnthropicProvider(MOCK_CONFIG_FULL)
+    provider.generate_command(
+        description="list files",
+        context={"shell": "bash"},
+        system_prompt="You are a CLI assistant"
+    )
+
+    call_kwargs = mock_client.messages.create.call_args.kwargs
+    assert call_kwargs["temperature"] == 0.5
 
 @patch('anthropic.Anthropic')
 def test_generate_command_api_error(mock_anthropic):
