@@ -39,3 +39,33 @@ def test_independent_checks():
     assert format_check(output, context)['pass']
     assert quoting_check(output, context)['pass']
     assert not danger_check(output, context)['pass']
+
+
+def test_bash_ansi_c_quoting():
+    output = "printf '%s' $'O\\'Brien'\n##DANGERLEVEL=0## Read only"
+    assert get_assert(output, {'vars': {'shell': 'bash', 'danger_levels': [0]}})['pass']
+
+
+def test_balanced_quotes_do_not_imply_valid_shell_syntax():
+    output = '(printf hello))\n##DANGERLEVEL=0## Read only'
+    assert not get_assert(output, {'vars': {'shell': 'bash', 'danger_levels': [0]}})['pass']
+
+
+def test_syntax_check_does_not_execute_commands_or_bash_env(tmp_path, monkeypatch):
+    from evals.checks import quoting_check
+    marker = tmp_path / 'executed'
+    startup = tmp_path / 'startup'
+    startup.write_text(f'touch {marker}\n')
+    monkeypatch.setenv('BASH_ENV', str(startup))
+    assert quoting_check(f'touch {marker}; echo $(touch {marker})\n##DANGERLEVEL=1## Write',
+                         {'vars': {'shell': 'bash'}})['pass']
+    assert not marker.exists()
+
+
+def test_behavior_failure_always_has_reason():
+    from evals.checks import behavior_check
+    result = behavior_check('', {'config': {'check': 'empty'},
+                                  'metadata': {'behavior': {'empty': {'pass': False, 'reason': ''}}}})
+    assert result['pass'] is False
+    assert result['score'] == 0
+    assert result['reason']

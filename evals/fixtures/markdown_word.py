@@ -11,6 +11,30 @@ import subprocess
 import tempfile
 
 
+def writes_files(trace):
+    """Detect write-capable opens and mutations, including removed temp files."""
+    mutations = {'creat', 'truncate', 'ftruncate', 'unlink', 'unlinkat', 'rename',
+                 'renameat', 'renameat2', 'mkdir', 'mkdirat', 'rmdir', 'link',
+                 'linkat', 'symlink', 'symlinkat', 'mknod', 'mknodat', 'chmod',
+                 'fchmod', 'chown', 'fchown', 'lchown', 'fchmodat', 'fchownat',
+                 'utime', 'utimes', 'utimensat'}
+    for line in trace.splitlines():
+        # Read-only Python startup can try (and fail) to cache stdlib bytecode.
+        # Failed syscalls did not modify anything; incomplete ones fail closed.
+        if re.search(r'\)\s+= -1\b', line):
+            continue
+        call = re.match(r'^(?:\d+\s+)?(\w+)\(', line)
+        if not call:
+            continue
+        if call[1] in mutations:
+            return True
+        if call[1] in ('open', 'openat', 'openat2') and re.search(r'\bO_(?:WRONLY|RDWR|CREAT|TRUNC|APPEND)\b', line):
+            # Redirecting output to /dev/null is normal read-only command plumbing.
+            if not re.search(r'open(?:at2?)?\((?:AT_FDCWD, )?"/dev/null",', line):
+                return True
+    return False
+
+
 def snapshot(root):
     result = {}
     for path in root.rglob('*'):
@@ -45,9 +69,10 @@ def trial(command, docs, *, distractors=False, nested=False):
             (root / '.git' / 'noise.md').write_text('decoy')
         (root / 'nested').mkdir(exist_ok=True)
         before = snapshot(root)
-        with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err:
+        with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err, tempfile.NamedTemporaryFile() as audit:
             try:
-                completed = subprocess.run(['/bin/bash', '--noprofile', '--norc', '-c', command],
+                completed = subprocess.run(['strace', '-f', '-qq', '-s', '4096', '-e', 'trace=%file,ftruncate,fchmod,fchown',
+                                            '-o', audit.name, '/bin/bash', '--noprofile', '--norc', '-c', command],
                                            cwd=root / 'nested' if nested else root,
                                            stdout=out, stderr=err, timeout=4)
                 out.seek(0); text = out.read(8192).decode(errors='replace')
@@ -55,7 +80,10 @@ def trial(command, docs, *, distractors=False, nested=False):
                 ok = completed.returncode == 0
             except subprocess.TimeoutExpired:
                 text, error, ok = '', 'Command timed out', False
-        unchanged = snapshot(root) == before
+            audit.seek(0)
+            trace = audit.read().decode(errors='replace')
+        write_attempts = [line for line in trace.splitlines() if writes_files(line)]
+        unchanged = snapshot(root) == before and bool(trace) and not write_attempts
         counts = collections.Counter()
         for content in docs.values():
             counts.update(set(re.findall('[a-z]+', content.lower())))
@@ -64,16 +92,23 @@ def trial(command, docs, *, distractors=False, nested=False):
         if candidates:
             distance = min(abs(2 * counts[w] - n) for w in candidates)
             best = {w for w in candidates if abs(2 * counts[w] - n) == distance}
-            words = set(re.findall('[a-z]+', text.lower()))
-            correct = bool(best & words)
+            # Allow explanatory text, but reject lists of competing fixture words.
+            mentioned = set(re.findall('[a-z]+', text.lower())) & counts.keys()
+            word = next(iter(mentioned)) if len(mentioned) == 1 else None
+            correct = word in best
             # If a count fraction is reported, verify it as well.
             fraction = re.search(r'(\d+)\s*/\s*(\d+)', text)
             if fraction and correct:
-                correct = int(fraction[2]) == n and any(counts[w] == int(fraction[1]) for w in best & words)
+                correct = int(fraction[2]) == n and counts[word] == int(fraction[1])
+            percent = re.search(r'(\d+(?:\.\d+)?)\s*%', text)
+            if percent and correct:
+                correct = abs(float(percent[1]) - 100 * counts[word] / n) <= .51
         else:
             correct = bool(re.search(r'\b(no|none|not|cannot|unable|empty)\b', text, re.I))
         return {'pass': ok and correct, 'unchanged': unchanged, 'output': text,
-                'reason': error if not ok else ('Correct result' if correct else 'Result does not match fixture word frequencies')}
+                'write_attempts': write_attempts[:5],
+                'reason': (error or 'Command exited with status ' + str(completed.returncode)) if not ok
+                          else ('Correct result' if correct else 'Result does not match fixture word frequencies')}
 
 
 def evaluate(command):
@@ -87,9 +122,15 @@ def evaluate(command):
                                       'c.md': 'common', 'd.md': 'common', 'e.md': 'common'}),
         'empty': trial(command, {}),
         'no_candidate': trial(command, {'a.md': 'common', 'b.md': 'common'}),
+        'empty_file': trial(command, {'a.md': 'cedar', 'b.md': ''}),
+        'sparse': trial(command, {'a.md': 'common cedar', 'b.md': 'common',
+                                 'c.md': 'common', 'd.md': 'common', 'e.md': 'common'}),
+        'filenames': trial(command, {'-draft.md': 'common cedar', 'a=b.md': 'common cedar',
+                                    'line\nbreak.md': 'common cedar', 'd.md': 'common',
+                                    'e.md': 'common', 'f.md': 'common'}),
     }
     tests['read_only'] = {'pass': all(item['unchanged'] for item in tests.values()),
-                          'reason': 'Fixture files must remain unchanged'}
+                          'reason': 'Repository must remain unchanged with no filesystem writes or write-capable opens (except /dev/null)'}
     return tests
 
 

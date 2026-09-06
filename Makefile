@@ -19,7 +19,7 @@ export MODELS REPEAT ABC_SECTION ABC_OPENAI_SECTION MAX_TOKENS CASES
 
 .PHONY: eval-image
 eval-image: ## Build the isolated command evaluation image
-	docker build -t abc-eval-fixtures:1 evals/fixtures
+	docker build -t abc-eval-fixtures:2 evals/fixtures
 
 .PHONY: eval eval-view eval-smoke eval-summary
 eval: ## Compare live models (MODELS="model-a model-b" REPEAT=1)

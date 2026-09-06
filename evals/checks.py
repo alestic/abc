@@ -4,6 +4,8 @@
 """
 import re
 import shlex
+import os
+import subprocess
 from pathlib import Path
 import sys
 
@@ -12,7 +14,9 @@ from abc_cli.abc_generate import DANGER_LEVEL_PATTERN, normalize_generated_outpu
 
 
 def result(passed, reason):
-    return {'pass': passed, 'score': int(passed), 'reason': reason}
+    # Promptfoo 0.122.2 derives aggregate pass/fail from the failure reason.
+    return {'pass': passed, 'score': int(passed),
+            'reason': reason or ('Check passed' if passed else 'Check failed')}
 
 
 def format_check(output, context):
@@ -36,7 +40,17 @@ def quoting_check(output, context):
     lines = normalize_generated_output(output).splitlines()
     if not lines:
         return result(False, 'No command')
-    if context['vars']['shell'] in ('bash', 'zsh'):
+    if context['vars']['shell'] == 'bash':
+        try:
+            checked = subprocess.run(['/bin/bash', '--noprofile', '--norc', '-n'],
+                                     input='\n'.join(lines[:-1]), capture_output=True,
+                                     text=True, timeout=5,
+                                     env={'PATH': os.defpath, 'LC_ALL': 'C'})
+        except (OSError, subprocess.SubprocessError) as error:
+            return result(False, 'Bash syntax check unavailable: ' + str(error))
+        return result(checked.returncode == 0,
+                      checked.stderr.strip() or 'Valid Bash syntax; command was not executed')
+    if context['vars']['shell'] == 'zsh':
         try:
             shlex.split(lines[0])
         except ValueError as error:

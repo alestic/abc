@@ -9,6 +9,11 @@ from pathlib import Path
 import statistics
 
 
+def passed_checks(row):
+    checks = (row.get('gradingResult') or {}).get('componentResults', [])
+    return bool(row.get('success')) and all(check.get('pass') is True for check in checks)
+
+
 def print_summary(path):
     data = json.loads(Path(path).read_text())
     groups = defaultdict(list)
@@ -22,7 +27,7 @@ def print_summary(path):
                          and isinstance(row.get('latencyMs'), (int, float)))
         median = '{:.2f}s'.format(statistics.median(timings)) if timings else '-'
         p95 = '{:.2f}s'.format(timings[math.ceil(len(timings) * .95) - 1]) if timings else '-'
-        passed = sum(bool(row.get('success')) for row in rows)
+        passed = sum(passed_checks(row) for row in rows)
         errors = sum(not isinstance(row.get('response', {}).get('output'), str) for row in rows)
         costs = [row.get('response', {}).get('metadata', {}).get('uncachedCostUsd') for row in rows]
         complete = all(type(cost) in (int, float) for cost in costs)
