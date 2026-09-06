@@ -16,7 +16,7 @@
         # Build the core abc-cli package
         abc-cli = python.pkgs.buildPythonApplication rec {
           pname = "abc-cli";
-          version = "2026.07.15";
+          version = "2026.09.06";
           format = "pyproject";
 
           src = ./.;
@@ -55,7 +55,7 @@
         # Build provider packages
         abc-provider-anthropic = python.pkgs.buildPythonPackage rec {
           pname = "abc-provider-anthropic";
-          version = "2026.07.15";
+          version = "2026.09.06";
           format = "pyproject";
 
           src = ./abc_provider_anthropic;
@@ -74,7 +74,7 @@
 
         abc-provider-aws-bedrock = python.pkgs.buildPythonPackage rec {
           pname = "abc-provider-aws-bedrock";
-          version = "2026.07.15";
+          version = "2026.09.06";
           format = "pyproject";
 
           src = ./abc_provider_aws_bedrock;

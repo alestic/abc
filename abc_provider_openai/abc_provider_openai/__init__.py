@@ -6,4 +6,4 @@
 from .llm_provider import OpenAIProvider
 
 __all__ = ["OpenAIProvider"]
-__version__ = "2026.07.15"
+__version__ = "2026.09.06"

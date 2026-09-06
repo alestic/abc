@@ -8,6 +8,27 @@ VENV := .venv
 VENV_PYTHON := $(VENV)/bin/python
 VENV_PIP := $(VENV)/bin/pip
 
+# [Created with AI: Codex with GPT-6 Astra]
+MODELS ?= claude-opus-4-5 claude-sonnet-5
+REPEAT ?= 1
+ABC_SECTION ?=
+ABC_OPENAI_SECTION ?=
+MAX_TOKENS ?= 4096
+export MODELS REPEAT ABC_SECTION ABC_OPENAI_SECTION MAX_TOKENS
+
+.PHONY: eval eval-view eval-smoke eval-summary
+eval: ## Compare live models (MODELS="model-a model-b" REPEAT=1)
+	@$(VENV_PYTHON) evals/run.py eval
+
+eval-view: ## Open the local model comparison viewer
+	@$(VENV_PYTHON) evals/run.py view
+
+eval-smoke: ## Check eval integration without model API calls
+	@$(VENV_PYTHON) evals/run.py eval --smoke
+
+eval-summary: ## Show saved pass counts and response times without API calls
+	@$(VENV_PYTHON) evals/summary.py
+
 # Files
 CONFIG_TEMPLATE := abc.conf.template
 

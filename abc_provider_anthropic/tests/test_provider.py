@@ -72,7 +72,7 @@ def test_generate_command(mock_anthropic):
     """Test command generation with mocked Anthropic client."""
     # Setup mock response
     mock_message = Mock()
-    mock_message.content = [Mock(text="ls -l\n##DANGERLEVEL=0## Safe command")]
+    mock_message.content = [Mock(type='text', text="ls -l\n##DANGERLEVEL=0## Safe command")]
     mock_client = Mock()
     mock_client.messages.create.return_value = mock_message
     mock_anthropic.return_value = mock_client
@@ -103,7 +103,7 @@ def test_generate_command(mock_anthropic):
 def test_generate_command_with_temperature(mock_anthropic):
     """Test temperature is sent only when explicitly configured."""
     mock_message = Mock()
-    mock_message.content = [Mock(text="ls -l\n##DANGERLEVEL=0## Safe command")]
+    mock_message.content = [Mock(type='text', text="ls -l\n##DANGERLEVEL=0## Safe command")]
     mock_client = Mock()
     mock_client.messages.create.return_value = mock_message
     mock_anthropic.return_value = mock_client
@@ -154,3 +154,25 @@ def test_invalid_max_tokens():
     config["max_tokens"] = "invalid"
     with pytest.raises(ValueError):
         AnthropicProvider(config)
+
+# [Created with AI: Codex with GPT-6 Astra]
+
+@pytest.mark.parametrize('blocks, stop_reason, expected', [
+    ([anthropic.types.ThinkingBlock(type='thinking', thinking='reasoning', signature='test'),
+      anthropic.types.TextBlock(type='text', text='ls\n'),
+      anthropic.types.TextBlock(type='text', text='##DANGERLEVEL=0## Read only')],
+     'end_turn', 'ls\n##DANGERLEVEL=0## Read only'),
+    ([anthropic.types.ThinkingBlock(type='thinking', thinking='reasoning', signature='test')],
+     'end_turn', None),
+    ([anthropic.types.TextBlock(type='text', text='rm -')], 'max_tokens', None),
+])
+@patch('anthropic.Anthropic')
+def test_response_blocks(mock_client, blocks, stop_reason, expected):
+    mock_client.return_value.messages.create.return_value = Mock(
+        content=blocks, stop_reason=stop_reason)
+    provider = AnthropicProvider(MOCK_CONFIG)
+    if expected is None:
+        with pytest.raises(ValueError):
+            provider.generate_command('test', {}, 'system')
+    else:
+        assert provider.generate_command('test', {}, 'system') == expected

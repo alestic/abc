@@ -1,6 +1,6 @@
 """OpenAI LLM provider implementation.
 
-[Created by AI: Claude Code]
+[Created by AI: Claude Code, Codex with GPT-6 Astra]
 """
 
 import openai
@@ -31,7 +31,14 @@ class OpenAIProvider(LLMProvider):
         self.temperature = float(config.get('temperature', DEFAULT_TEMPERATURE))
         self.max_tokens = int(config.get('max_tokens', DEFAULT_MAX_TOKENS))
         self.timeout = float(config.get('timeout', DEFAULT_TIMEOUT))
-        self.reasoning_effort = config.get('reasoning_effort', DEFAULT_REASONING_EFFORT)
+        self.api = config.get('api', 'chat_completions')
+        if self.api not in ('chat_completions', 'responses'):
+            raise ValueError('api must be chat_completions or responses')
+        # A configured effort is always sent. Without one, GPT-5 models get the
+        # low-cost default; other models are left at the server default.
+        self.reasoning_effort = config.get('reasoning_effort')
+        if self.reasoning_effort is None and 'gpt-5' in self.model.lower():
+            self.reasoning_effort = DEFAULT_REASONING_EFFORT
         
         # Optional organization ID
         self.organization = config.get('organization')
@@ -55,6 +62,24 @@ class OpenAIProvider(LLMProvider):
     ) -> str:
         """Generate command using OpenAI GPT models."""
         try:
+            if self.api == 'responses':
+                params = {
+                    'model': self.model,
+                    'instructions': system_prompt,
+                    'input': f"Description: {description}\n\n{context.get('shell', 'bash').capitalize()} command(s):",
+                    'max_output_tokens': self.max_tokens,
+                    'store': False,
+                }
+                if self.reasoning_effort:
+                    params['reasoning'] = {'effort': self.reasoning_effort}
+                if self.temperature != 0.0:
+                    params['temperature'] = self.temperature
+                response = self.client.responses.create(**params)
+                if response.status != 'completed':
+                    raise ValueError('OpenAI response did not complete; check max_tokens and model settings')
+                if not response.output_text.strip():
+                    raise ValueError('OpenAI returned no text command')
+                return response.output_text.strip()
             # Build request parameters
             request_params = {
                 "model": self.model,
@@ -71,8 +96,7 @@ class OpenAIProvider(LLMProvider):
                 ]
             }
             
-            # Add reasoning_effort for GPT-5 models
-            if 'gpt-5' in self.model.lower():
+            if self.reasoning_effort:
                 request_params["reasoning_effort"] = self.reasoning_effort
             
             # Only add temperature if it's not the default 0.0 (some models don't support 0.0)
@@ -90,11 +114,15 @@ class OpenAIProvider(LLMProvider):
                 logging.debug(f"Message: {response.choices[0].message}")
                 logging.debug(f"Content: {response.choices[0].message.content}")
             
+            if response.choices[0].finish_reason == 'length':
+                raise ValueError('OpenAI response exceeded max_tokens; increase the configured limit')
             result = response.choices[0].message.content
             if result is None:
                 logging.warning("OpenAI returned None content")
                 return ""
             return result.strip()
+        except ValueError:
+            raise
         except openai.APIError as e:
             raise RuntimeError(f"OpenAI API error: {e}")
         except Exception as e:
@@ -141,9 +169,15 @@ class OpenAIProvider(LLMProvider):
                 },
                 "reasoning_effort": {
                     "type": "string",
-                    "description": "Reasoning effort for GPT-5 models (minimal, low, medium, high)",
+                    "description": "Reasoning effort, sent whenever set (defaults to minimal for GPT-5 models; set empty for the API default)",
                     "default": DEFAULT_REASONING_EFFORT,
-                    "enum": ["minimal", "low", "medium", "high"]
+                    "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max"]
+                },
+                "api": {
+                    "type": "string",
+                    "description": "OpenAI API to call",
+                    "enum": ["chat_completions", "responses"],
+                    "default": "chat_completions"
                 }
             },
             "required": ["provider", "api_key"]

@@ -45,9 +45,11 @@ model = gpt-4o
 - `api_key`: Your OpenAI API key (required)
 - `model`: Model to use (optional, defaults to gpt-5)
 - `temperature`: Sampling temperature 0.0-2.0 (optional, default: 0.0, omitted for newer models that don't support 0.0)
-- `max_tokens`: Maximum response tokens (optional, default: 1000)
+- `max_tokens`: Maximum response tokens (optional, default: 1000). A response cut off at this limit is an error, not a partial command.
 - `timeout`: Request timeout in seconds (optional, default: 120)
 - `organization`: OpenAI organization ID (optional)
+- `reasoning_effort`: Reasoning effort, sent whenever set: none, minimal, low, medium, high, xhigh, max (optional, default: minimal for GPT-5 models, otherwise the API default; set it empty to use the API default on GPT-5 too)
+- `api`: OpenAI API to call, `chat_completions` or `responses` (optional, default: chat_completions)
 
 ## Usage
 

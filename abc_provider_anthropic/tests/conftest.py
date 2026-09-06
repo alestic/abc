@@ -9,7 +9,7 @@ def mock_anthropic():
     with patch('anthropic.Anthropic') as mock:
         # Setup default mock response
         mock_message = Mock()
-        mock_message.content = [Mock(text="echo test\n##DANGERLEVEL=0## Safe command")]
+        mock_message.content = [Mock(type='text', text="echo test\n##DANGERLEVEL=0## Safe command")]
         mock_client = Mock()
         mock_client.messages.create.return_value = mock_message
         mock.return_value = mock_client
@@ -39,3 +39,5 @@ def mock_context():
         "shell": "bash",
         "os_info": "Ubuntu 22.04",
     }
+
+# [Created with AI: Codex with GPT-6 Astra]

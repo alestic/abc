@@ -47,3 +47,6 @@ result
 htmlcov/
 .pytest_cache/
 .tox/
+
+# [Created with AI: Codex with GPT-6 Astra]
+evals/.results/

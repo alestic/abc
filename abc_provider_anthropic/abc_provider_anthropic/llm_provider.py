@@ -29,6 +29,7 @@ class AnthropicProvider(LLMProvider):
             float(config['temperature']) if 'temperature' in config else None
         )
         self.max_tokens = int(config.get('max_tokens', DEFAULT_MAX_TOKENS))
+        self.effort = config.get('effort')
         self.client = anthropic.Anthropic(api_key=self.api_key)
 
     def generate_command(
@@ -56,9 +57,17 @@ class AnthropicProvider(LLMProvider):
         }
         if self.temperature is not None:
             request_params["temperature"] = self.temperature
+        if self.effort:
+            request_params['output_config'] = {'effort': self.effort}
 
         message = self.client.messages.create(**request_params)
-        return message.content[0].text.strip()
+        # [Created with AI: Codex with GPT-6 Astra]
+        if message.stop_reason == 'max_tokens':
+            raise ValueError('Claude response exceeded max_tokens; increase the configured limit')
+        text = ''.join(block.text for block in message.content if block.type == 'text').strip()
+        if not text:
+            raise ValueError('Claude returned no text command')
+        return text
 
     def get_config_schema(self) -> Dict:
         """Get JSON schema for configuration."""
@@ -87,6 +96,10 @@ class AnthropicProvider(LLMProvider):
                     "type": "string",
                     "description": "Maximum tokens in response",
                     "default": DEFAULT_MAX_TOKENS
+                },
+                "effort": {
+                    "type": "string",
+                    "description": "Optional effort level for supported models"
                 }
             },
             "required": ["provider", "api_key"]
