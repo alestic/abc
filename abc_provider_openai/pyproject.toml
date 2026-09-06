@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abc-provider-openai"
-version = "2026.07.15"
+version = "2026.09.06"
 description = "OpenAI LLM provider for abc-cli"
 readme = "README.md"
 requires-python = ">=3.8"

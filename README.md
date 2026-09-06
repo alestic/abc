@@ -328,4 +328,4 @@ Prompt crafting by Eric Hammond
 
 ## Version
 
-Current version: 2026.07.15
+Current version: 2026.09.06
