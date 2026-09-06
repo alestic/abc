@@ -84,6 +84,8 @@ def main():
         parser.error('MAX_TOKENS must be positive')
     if not models or repeat < 1:
         parser.error('MODELS must be nonempty and REPEAT must be positive')
+    if len(set(models)) != len(models):
+        parser.error('MODELS must not repeat an entry; use REPEAT to measure run-to-run variance')
     if not args.smoke:
         for provider in sorted({item['provider'] for item in combinations}):
             try:

@@ -6,6 +6,7 @@ provider = anthropic
 # Anthropic API key from https://console.anthropic.com/settings/keys
 api_key = {ANTHROPIC_API_KEY}
 model = claude-sonnet-4-0
+# effort = low  # Optional: low, medium, high, or max on models that support it
 
 # Example configurations for other providers:
 
@@ -13,6 +14,8 @@ model = claude-sonnet-4-0
 # provider = openai
 # api_key = {OPENAI_API_KEY}  # OpenAI API key from https://platform.openai.com/api-keys
 # model = gpt-5
+# reasoning_effort = minimal  # Optional: none, minimal, low, medium, high, xhigh, max
+# api = chat_completions  # Optional: chat_completions or responses
 
 # [bedrock-claude]  # AWS Bedrock Claude config
 # provider = aws-bedrock

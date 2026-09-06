@@ -14,7 +14,7 @@ authors = [
     { name = "Eric Hammond", email = "" }
 ]
 dependencies = [
-    "openai>=1.0.0"
+    "openai>=1.66.0"
 ]
 
 [project.optional-dependencies]

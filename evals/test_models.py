@@ -81,7 +81,7 @@ def test_openai_rejects_unusable_responses(status, text):
     with patch('openai.OpenAI') as client:
         client.return_value.responses.create.return_value = Mock(status=status, output_text=text)
         provider = OpenAIProvider({'provider':'openai', 'api_key':'fake', 'api':'responses'})
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             provider.generate_command('test', {}, 'system')
 
 

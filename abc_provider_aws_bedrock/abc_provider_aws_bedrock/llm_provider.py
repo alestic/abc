@@ -103,9 +103,14 @@ class AWSBedrockProvider(LLMProvider):
                 if 'stopReason' in response:
                     logger.debug(f"Stop reason: {response['stopReason']}")
 
+            if response.get('stopReason') == 'max_tokens':
+                raise ValueError('Bedrock response exceeded max_tokens; increase the configured limit')
+
             # Extract text from the assistant's response
             return response['output']['message']['content'][0]['text'].strip()
 
+        except ValueError:
+            raise
         except Exception as e:
             # Only wrap API errors, not validation errors
             raise RuntimeError(f"Bedrock API error: {str(e)}") from e

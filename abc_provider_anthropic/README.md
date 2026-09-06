@@ -27,8 +27,9 @@ api_key = {ANTHROPIC_API_KEY}  # Required: Your Anthropic API key
 model = claude-opus-4-5              # Claude model to use
 max_tokens = 1000                    # Maximum response length
 
-# Optional; omitted by default. Only set for models that support it:
+# Optional; omitted by default. Only set for models that support them:
 # temperature = 0.0                  # Lower values = more deterministic output
+# effort = low                       # low, medium, high, or max
 ```
 
 ### Configuration Options
@@ -40,7 +41,8 @@ max_tokens = 1000                    # Maximum response length
   - Range: 0.0 to 1.0
   - Lower values produce more deterministic output
   - Higher values allow more creative variations
-- `max_tokens` (optional): Maximum length of generated response. Default: `1000`
+- `max_tokens` (optional): Maximum length of generated response. Default: `1000`. A response cut off at this limit is an error, not a partial command.
+- `effort` (optional): Effort level for models that support it: `low`, `medium`, `high`, or `max`. Omitted from API requests unless explicitly configured.
 
 ## Development
 

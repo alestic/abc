@@ -31,8 +31,9 @@ def call_api(prompt, options, context):
     else:
         from abc_provider_openai.llm_provider import OpenAIProvider
         settings['api'] = 'responses'
-        if config.get('effort'):
-            settings['reasoning_effort'] = config['effort']
+        # Empty reasoning_effort disables the provider's GPT-5 default so plain
+        # model IDs use the API default effort.
+        settings['reasoning_effort'] = config.get('effort', '')
         provider = OpenAIProvider(settings)
     shell_context = {'shell': case['shell'], 'os_info': case['os_info']}
     started = time.monotonic()

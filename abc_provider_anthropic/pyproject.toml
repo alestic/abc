@@ -14,7 +14,7 @@ authors = [
     { name = "Eric Hammond", email = "" }
 ]
 dependencies = [
-    "anthropic>=0.64.0"
+    "anthropic>=0.77.0"
 ]
 
 [project.optional-dependencies]

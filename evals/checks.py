@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from abc_cli.abc_generate import normalize_generated_output
+from abc_cli.abc_generate import DANGER_LEVEL_PATTERN, normalize_generated_output
 
 
 def get_assert(output, context):
@@ -17,9 +17,9 @@ def get_assert(output, context):
     if len(lines) != 2:
         errors.append('Expected one command line and one danger annotation')
     else:
-        if not lines[0].strip() or lines[0].startswith(('```', '<', '#')):
+        if not lines[0].strip() or lines[0].startswith(('```', '#')):
             errors.append('Expected an unwrapped command')
-        annotation = re.fullmatch(r'##DANGERLEVEL=([012])##\s+\S.*', lines[1])
+        annotation = re.fullmatch(DANGER_LEVEL_PATTERN, lines[1])
         if not annotation:
             errors.append('Missing or invalid danger annotation')
         elif int(annotation[1]) not in context['vars']['danger_levels']:
