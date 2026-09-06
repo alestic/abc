@@ -30,6 +30,7 @@ class AnthropicProvider(LLMProvider):
         )
         self.max_tokens = int(config.get('max_tokens', DEFAULT_MAX_TOKENS))
         self.effort = config.get('effort')
+        self.last_usage = None
         self.client = anthropic.Anthropic(api_key=self.api_key)
 
     def generate_command(
@@ -39,6 +40,7 @@ class AnthropicProvider(LLMProvider):
         system_prompt: str,
     ) -> str:
         """Generate command using Anthropic Claude."""
+        self.last_usage = None
         request_params = {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -61,6 +63,7 @@ class AnthropicProvider(LLMProvider):
             request_params['output_config'] = {'effort': self.effort}
 
         message = self.client.messages.create(**request_params)
+        self.last_usage = message.usage
         # [Created with AI: Codex with GPT-6 Astra]
         if message.stop_reason == 'max_tokens':
             raise ValueError('Claude response exceeded max_tokens; increase the configured limit')

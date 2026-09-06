@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / 'abc_provider_anthropic'))
 
 from abc_cli.prompts import get_system_prompt
 from abc_cli.abc_generate import DANGER_LEVEL_PATTERN, normalize_generated_output
+from evals.pricing import normalize_usage, estimate_cost
 sys.path.insert(0, str(ROOT / 'abc_provider_openai'))
 
 
@@ -43,10 +44,22 @@ def call_api(prompt, options, context):
         provider = OpenAIProvider(settings)
     shell_context = {'shell': case['shell'], 'os_info': case['os_info']}
     started = time.monotonic()
-    output = provider.generate_command(case['description'], shell_context,
-                                       get_system_prompt(shell_context))
-    result = {'output': output, 'latencyMs': (time.monotonic() - started) * 1000,
-              'metadata': {}}
+    result = {}
+    try:
+        result['output'] = provider.generate_command(case['description'], shell_context,
+                                                   get_system_prompt(shell_context))
+    except Exception as error:
+        result['error'] = str(error)
+    result['latencyMs'] = (time.monotonic() - started) * 1000
+    usage = normalize_usage(name, provider.last_usage)
+    cost = estimate_cost(usage, config.get('pricing'))
+    result['metadata'] = {'usage': usage, 'uncachedCostUsd': cost,
+                          'costBasis': 'uncached standard-rate estimate, not actual billed cost'}
+    if usage is not None:
+        result['tokenUsage'] = {'prompt': usage['input_tokens'], 'completion': usage['output_tokens'],
+                                'total': usage['input_tokens'] + usage['output_tokens']}
+    # Keep the estimate explicitly named in metadata instead of presenting it
+    # as Promptfoo's billed-cost field.
     add_behavior(result, case)
     return result
 
