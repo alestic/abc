@@ -4,6 +4,7 @@
 """
 import re
 import shlex
+import shutil
 import os
 import subprocess
 from pathlib import Path
@@ -47,8 +48,11 @@ def quoting_check(output, context):
         return result(False, 'No command')
     command = parts[0]
     if context['vars']['shell'] == 'bash':
+        bash = shutil.which('bash')
+        if bash is None:
+            return result(False, 'Bash syntax check unavailable: bash not found on PATH')
         try:
-            checked = subprocess.run(['/bin/bash', '--noprofile', '--norc', '-n'],
+            checked = subprocess.run([bash, '--noprofile', '--norc', '-n'],
                                      input=command, capture_output=True, text=True, timeout=5,
                                      env={'PATH': os.defpath, 'LC_ALL': 'C'})
         except (OSError, subprocess.SubprocessError) as error:

@@ -3,7 +3,9 @@
 [Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1]
 """
 import collections
+import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -12,6 +14,20 @@ import tempfile
 CHECKS = ('word', 'no_candidate')
 WORD = re.compile('[a-z]+')
 FRACTION = re.compile(r'\d+\s*/\s*\d+')
+
+
+def snapshot(root):
+    """Map every path under root, including ignored files and .git, to its content hash."""
+    state = {}
+    for path in root.rglob('*'):
+        key = str(path.relative_to(root))
+        if path.is_symlink():
+            state[key] = 'link:' + os.readlink(path)
+        elif path.is_file():
+            state[key] = hashlib.sha256(path.read_bytes()).hexdigest()
+        else:
+            state[key] = 'dir'
+    return state
 
 
 def trial(command, docs):
@@ -35,8 +51,7 @@ def trial(command, docs):
         (root / 'ignored' / 'two.md').write_text('alder')
         (root / 'noise.txt').write_text('alder')
         (root / 'nested').mkdir(exist_ok=True)
-        status = ['git', '-C', str(root), 'status', '--porcelain']
-        before = subprocess.check_output(status)
+        before = snapshot(root)
         try:
             completed = subprocess.run(['/bin/bash', '--noprofile', '--norc', '-c', command],
                                        cwd=root / 'nested', capture_output=True, text=True, timeout=4)
@@ -46,7 +61,7 @@ def trial(command, docs):
         if completed.returncode:
             reason = completed.stderr.strip() or 'Command exited with status ' + str(completed.returncode)
             return {'pass': False, 'reason': reason, 'output': output}
-        if subprocess.check_output(status) != before:
+        if snapshot(root) != before:
             return {'pass': False, 'reason': 'Command modified the repository', 'output': output}
         counts = collections.Counter()
         for content in docs.values():
@@ -69,10 +84,10 @@ def evaluate(command):
     # instead of files excludes it and picks birch (3 of 4). Counting the alder
     # decoys makes alder the answer.
     return {
-        'word': trial(command, {'one.md': 'common cedar cedar birch',
-                                'two space.md': 'common cedar cedar birch',
-                                'three.md': 'common birch', 'nested/four.md': 'common'}),
-        'no_candidate': trial(command, {'a.md': 'common', 'b.md': 'common'}),
+        'word': trial(command, {'one.md': 'spruce cedar cedar birch',
+                                'two space.md': 'spruce cedar cedar birch',
+                                'three.md': 'spruce birch', 'nested/four.md': 'spruce'}),
+        'no_candidate': trial(command, {'a.md': 'spruce', 'b.md': 'spruce'}),
     }
 
 
