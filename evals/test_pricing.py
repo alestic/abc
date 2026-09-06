@@ -32,10 +32,13 @@ def test_missing_usage_and_prices_unknown():
     assert estimate_cost({'input_tokens': 20, 'output_tokens': 10}, {}) is None
 
 
-def test_long_context_tier():
+def test_special_rates_are_unknown():
     rates = dict(RATES, input_cost_per_token_above_272k_tokens=4e-6,
                  output_cost_per_token_above_272k_tokens=15e-6)
-    assert estimate_cost({'input_tokens': 300000, 'output_tokens': 100}, rates) == pytest.approx(1.2015)
+    assert estimate_cost({'input_tokens': 300000, 'output_tokens': 100}, rates) is None
+    assert estimate_cost({'input_tokens': 100, 'output_tokens': 100}, rates) == pytest.approx(.0012)
+    assert estimate_cost({'input_tokens': 100, 'output_tokens': 100},
+                         dict(RATES, output_cost_per_reasoning_token=20e-6)) is None
 
 
 def test_snapshot_provider_match_and_failure():

@@ -119,7 +119,7 @@ def main():
         if missing:
             print('Pricing unavailable for: ' + ', '.join(missing), file=sys.stderr)
     for case in cases['tests']:
-        if case['vars'].get('behavior'):
+        if case['vars'].get('behavior') and not args.smoke:
             case['assert'] = [{'type': 'python', 'metric': 'Word ' + name,
                               'value': 'file://' + str(ROOT / 'checks.py') + ':behavior_check',
                               'config': {'check': name}}

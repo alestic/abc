@@ -5,7 +5,7 @@ Compare models using abc's providers and system prompt:
 ```bash
 # One-time setup (.venv must exist; npm is also required).
 .venv/bin/python -m pip install -e . -e ./abc_provider_anthropic -e ./abc_provider_openai
-make eval-image # Requires Docker; builds the command fixture image once.
+make eval-image # One-time setup; requires Docker.
 
 make eval MODELS="claude-sonnet-5@low claude-sonnet-5@medium gpt-6-astra@low" REPEAT=3
 make eval-view
@@ -97,10 +97,12 @@ response times exclude fixture execution.
 To run just this case:
 
 ```bash
+make eval-image # One-time setup; requires Docker.
 make eval CASES=markdown-word MODELS="gpt-6-astra@low claude-sonnet-5@low" REPEAT=3
 ```
 
-`CASES` accepts space-separated case names; omit it to run all cases.
+`CASES` accepts space-separated case names; omit it to run all eleven cases,
+including the Docker execution test.
 
 Review outputs against the case's `review` rubric in `cases.json`, including
 filename handling, side effects, and shell/OS compatibility. Examples are only
@@ -116,7 +118,9 @@ Each live run downloads the [LiteLLM pricing catalog](https://github.com/BerriAI
 once. Selected rates, source URL, retrieval time, and catalog hash are saved in
 a timestamped `pricing-*.json` file and embedded in the run metadata. Prices
 are standard rates with no caching, batch, or priority adjustment. This
-third-party catalog may lag official pricing. Missing prices or a failed
+third-party catalog may lag official pricing. Calls requiring long-context
+tiers or distinct reasoning-token rates show unknown; only standard input/output
+rates are calculated. Missing prices or a failed
 download leave cost unknown while evaluations continue. Smoke tests do not
 download pricing. Earlier results without token usage cannot be costed retroactively.
 

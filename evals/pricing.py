@@ -59,36 +59,22 @@ def normalize_usage(provider, usage):
     if not all(type(n) is int and n >= 0 for n in (input_tokens, output_tokens)):
         return None
     # OpenAI output_tokens already includes reasoning; do not add it again.
-    details = usage.get('output_tokens_details') or usage.get('completion_tokens_details') or {}
-    reasoning = details.get('reasoning_tokens')
-    result = {'input_tokens': input_tokens, 'output_tokens': output_tokens}
-    if type(reasoning) is int and 0 <= reasoning <= output_tokens:
-        result['reasoning_tokens'] = reasoning
-    return result
+    return {'input_tokens': input_tokens, 'output_tokens': output_tokens}
 
 
 def estimate_cost(usage, rates):
     if usage is None or not rates:
         return None
-    def rate(kind):
-        value = rates.get(kind + '_cost_per_token')
-        thresholds = []
-        for key, tier in rates.items():
-            match = re.fullmatch(kind + r'_cost_per_token_above_(\d+)k_tokens', key)
-            if match and usage['input_tokens'] > int(match[1]) * 1000:
-                thresholds.append((int(match[1]), tier))
-        if thresholds:
-            value = max(thresholds)[1]
-        return value
-    input_rate, output_rate = rate('input'), rate('output')
+    input_rate = rates.get('input_cost_per_token')
+    output_rate = rates.get('output_cost_per_token')
     if not all(type(n) in (int, float) and math.isfinite(n) and n >= 0
                for n in (input_rate, output_rate)):
         return None
-    cost = usage['input_tokens'] * input_rate + usage['output_tokens'] * output_rate
-    reasoning_rate = rates.get('output_cost_per_reasoning_token')
-    if reasoning_rate is not None and reasoning_rate != output_rate:
-        if ('reasoning_tokens' not in usage or type(reasoning_rate) not in (int, float)
-                or not math.isfinite(reasoning_rate) or reasoning_rate < 0):
+    # Only standard rates are supported; do not underprice special-rate calls.
+    for key in rates:
+        match = re.fullmatch(r'(input|output)_cost_per_token_above_(\d+)k_tokens', key)
+        if match and usage['input_tokens'] > int(match[2]) * 1000:
             return None
-        cost += usage['reasoning_tokens'] * (reasoning_rate - output_rate)
-    return cost
+    if rates.get('output_cost_per_reasoning_token', output_rate) != output_rate:
+        return None
+    return usage['input_tokens'] * input_rate + usage['output_tokens'] * output_rate
