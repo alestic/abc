@@ -4,6 +4,7 @@
 """
 import argparse
 import configparser
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -13,6 +14,7 @@ import sys
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent))
 from abc_cli.abc_generate import get_config, get_config_file
+from evals.pricing import fetch_snapshot
 PROMPTFOO = ['npx', '--yes', '--package=node@22.22.0',
              '--package=promptfoo@0.122.2', 'promptfoo']
 
@@ -106,6 +108,16 @@ def main():
             except (OSError, configparser.Error, ValueError):
                 parser.error('Could not load ' + provider + ' key. Check abc config sections '
                              'or set ' + provider.upper() + '_API_KEY.')
+    results = ROOT / '.results'
+    results.mkdir(exist_ok=True)
+    pricing = {'models': {}, 'basis': 'offline smoke; no cost estimate'}
+    if not args.smoke:
+        pricing = fetch_snapshot(combinations)
+        snapshot_path = results / ('pricing-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ') + '.json')
+        snapshot_path.write_text(json.dumps(pricing, indent=2) + '\n')
+        missing = sorted({item['model'] for item in combinations} - pricing['models'].keys())
+        if missing:
+            print('Pricing unavailable for: ' + ', '.join(missing), file=sys.stderr)
     for case in cases['tests']:
         if case['vars'].get('behavior'):
             case['assert'] = [{'type': 'python', 'metric': 'Word ' + name,
@@ -118,10 +130,11 @@ def main():
             ['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
             'workingTreeDirty': bool(subprocess.check_output(
                 ['git', 'status', '--porcelain'], cwd=ROOT, text=True).strip()),
-            'offlineSmoke': args.smoke},
+            'offlineSmoke': args.smoke, 'pricing': pricing},
         'prompts': ['{{description}}'],
         'providers': [{'id': 'file://' + str(ROOT / 'provider.py'), 'label': model,
-                       'config': dict(combination, smoke=args.smoke, max_tokens=max_tokens)}
+                       'config': dict(combination, smoke=args.smoke, max_tokens=max_tokens,
+                                      pricing=pricing['models'].get(combination['model']))}
                       for model, combination in zip(models, combinations)],
         'tests': cases['tests'],
         'defaultTest': {'assert': [{'type': 'python', 'metric': name,

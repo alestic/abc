@@ -14,7 +14,7 @@ def print_summary(path):
     groups = defaultdict(list)
     for row in data['results']['results']:
         groups[row['provider']['label']].append(row)
-    print('\nModel/effort                         Passed    Errors    Median     p95')
+    print('\nModel/effort                         Passed    Errors    Median     p95    Uncached $/call    Est. total $')
     for label, rows in sorted(groups.items()):
         # Include completed responses whether their assertions pass or fail.
         timings = sorted(row['latencyMs'] / 1000 for row in rows
@@ -24,9 +24,15 @@ def print_summary(path):
         p95 = '{:.2f}s'.format(timings[math.ceil(len(timings) * .95) - 1]) if timings else '-'
         passed = sum(bool(row.get('success')) for row in rows)
         errors = sum(not isinstance(row.get('response', {}).get('output'), str) for row in rows)
-        print('{:<36} {:>3}/{:<3} {:>7} {:>10} {:>8}'.format(
-            label, passed, len(rows), errors, median, p95))
+        costs = [row.get('response', {}).get('metadata', {}).get('uncachedCostUsd') for row in rows]
+        complete = all(type(cost) in (int, float) for cost in costs)
+        average = '{:.6f}'.format(statistics.mean(costs)) if complete else 'unknown'
+        total = '{:.6f}'.format(sum(costs)) if complete else 'unknown'
+        print('{:<36} {:>3}/{:<3} {:>7} {:>10} {:>8} {:>18} {:>15}'.format(
+            label, passed, len(rows), errors, median, p95, average, total))
     print('Times cover completed responses, including assertion failures; scores require manual correctness review.')
+    print('Cost estimates use full input/output rates without cache discounts, including reasoning tokens.')
+    print('Unknown means pricing or usage is missing for at least one call; not an actual bill or retry total.')
     for label, rows in sorted(groups.items()):
         checks = defaultdict(list)
         for row in rows:

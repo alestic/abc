@@ -57,7 +57,8 @@ Normal `make test` does not run evaluations.
 
 ## Results
 
-The runner prints pass counts, error counts, median response time, and p95 after
+The runner prints pass counts, error counts, median response time, p95, and
+estimated uncached USD cost per call and total after
 each completed run. `make eval-summary` prints the saved summary without calls.
 Times cover completed provider calls, including responses that fail assertions;
 API errors are counted separately. These are full-response times, not time to
@@ -94,7 +95,20 @@ the fixture image are checked before any model calls when this case is selected.
 Review outputs against the case's `review` rubric in `cases.json`, including
 filename handling, side effects, and shell/OS compatibility. Examples are only
 for offline smoke tests, not exact-match answers, and are not sent to models.
-Token usage and cost are not reported because abc's providers return only text.
+Input/output token counts and uncached cost estimates are saved with each
+response. Reasoning tokens are included in output usage, not added twice.
+All cached input is priced at the normal input rate to represent infrequent
+abc usage. Estimates are not actual billed costs; retries and account-specific
+discounts are not included. A model's cost summary is unknown if any call lacks
+pricing or usage, rather than silently reporting a partial total.
+
+Each live run downloads the [LiteLLM pricing catalog](https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json)
+once. Selected rates, source URL, retrieval time, and catalog hash are saved in
+a timestamped `pricing-*.json` file and embedded in the run metadata. Prices
+are standard rates with no caching, batch, or priority adjustment. This
+third-party catalog may lag official pricing. Missing prices or a failed
+download leave cost unknown while evaluations continue. Smoke tests do not
+download pricing. Earlier results without token usage cannot be costed retroactively.
 
 ## Maintenance
 

@@ -31,6 +31,7 @@ class OpenAIProvider(LLMProvider):
         self.temperature = float(config.get('temperature', DEFAULT_TEMPERATURE))
         self.max_tokens = int(config.get('max_tokens', DEFAULT_MAX_TOKENS))
         self.timeout = float(config.get('timeout', DEFAULT_TIMEOUT))
+        self.last_usage = None
         self.api = config.get('api', 'chat_completions')
         if self.api not in ('chat_completions', 'responses'):
             raise ValueError('api must be chat_completions or responses')
@@ -61,6 +62,7 @@ class OpenAIProvider(LLMProvider):
         system_prompt: str,
     ) -> str:
         """Generate command using OpenAI GPT models."""
+        self.last_usage = None
         try:
             if self.api == 'responses':
                 params = {
@@ -75,6 +77,7 @@ class OpenAIProvider(LLMProvider):
                 if self.temperature != 0.0:
                     params['temperature'] = self.temperature
                 response = self.client.responses.create(**params)
+                self.last_usage = response.usage
                 if response.status != 'completed':
                     raise ValueError('OpenAI response did not complete; check max_tokens and model settings')
                 if not response.output_text.strip():
@@ -104,6 +107,7 @@ class OpenAIProvider(LLMProvider):
                 request_params["temperature"] = self.temperature
                 
             response = self.client.chat.completions.create(**request_params)
+            self.last_usage = response.usage
             
             # Debug logging
             import logging
