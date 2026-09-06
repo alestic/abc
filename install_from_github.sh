@@ -1,5 +1,6 @@
 #!/bin/bash
 # abc/install_from_github.sh - Install pipx and use to install abc from GitHub
+# [Created with AI: Codex with GPT-6 Astra]
 
 set -e  # Exit on error
 set -u  # Exit on undefined variable
@@ -76,7 +77,7 @@ prompt_user() {
     # Add newline since we used echo -n above
     echo >&2
 
-    response=${response,,}  # Convert to lowercase
+    response=$(printf '%s' "$response" | tr '[:upper:]' '[:lower:]')
 
     if [[ -z "$response" ]]; then
         echo "$default"
@@ -132,6 +133,7 @@ install_pipx() {
         if command -v brew &> /dev/null; then
             package_manager="Homebrew"
             commands="brew install pipx"
+            install_command="brew install pipx"
         else
             error "Homebrew not found. Please install Homebrew first."
         fi

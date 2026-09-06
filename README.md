@@ -347,6 +347,6 @@ Prompt crafting by Eric Hammond
 
 ## Version
 
-Current version: 2026.09.06.1
+Current version: 2026.09.06.2
 
 <!-- [Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1] -->

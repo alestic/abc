@@ -1,3 +1,4 @@
+# [Created with AI: Codex with GPT-6 Astra]
 abc() {
     # Check for --help and --version options for direct passthrough
     if [ $# -gt 0 ] && ([ "$1" = "--help" ] || [ "$1" = "--version" ]); then
@@ -28,11 +29,12 @@ abc() {
         return $abc_exit_code
     fi
     local user_cmd=$abc_cmd
-    while read -t 0.1 -n 1; do : ; done
     if [ -n "$ZSH_VERSION" ]; then
+        while read -t 0.1 -k 1; do : ; done
         vared -p "$(print "$PS1")" -c user_cmd
         print -s "$user_cmd"
     else
+        while read -t 0.1 -n 1; do : ; done
         read -e -r -p "$(printf "%s" "${PS1@P}")" -i "$abc_cmd" user_cmd
         history -s $(history 1 | sed 's/^ *[0-9]* *//')
         history -s "$user_cmd"
