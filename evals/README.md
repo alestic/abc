@@ -54,8 +54,7 @@ the pinned runtime avoids a global Node upgrade. The viewer and run history are
 local, with no hosted account required. Each live run makes paid API calls:
 11 cases × model/effort combinations × repeats. Response caching is disabled.
 Normal `make test` does not run evaluations. Run offline evaluator regression tests
-with `.venv/bin/python -m pytest evals/`; these make no model calls and skip Docker
-integration tests unless explicitly enabled.
+with `.venv/bin/python -m pytest evals/`; these make no model calls.
 
 ## Results
 
@@ -70,12 +69,12 @@ Results live in ignored `evals/.results/`. Live exports overwrite `latest.json`;
 smoke exports use `smoke.json`. Promptfoo retains run history in its local state
 directory. Metadata records source revision, dirty working tree, and smoke mode.
 
-Every response gets independent named pass/fail checks for Format, Danger,
-and Quoting after abc's Markdown/CDATA cleanup. For Bash, Quoting runs `bash -n`
+Every response gets independent pass/fail checks for Format, Danger, and
+Quoting after abc's Markdown/CDATA cleanup. For Bash, Quoting runs `bash -n`
 with startup environment variables removed: it checks shell syntax without
 executing the generated command. Zsh retains a limited `shlex` quoting check;
-tcsh syntax is not validated. The summary also prints pass counts for each check.
-A response passes overall only when all its checks pass.
+tcsh syntax is not validated. A response passes overall only when all its
+checks pass.
 The runner sets an aggregate threshold of 1 and always supplies a nonempty
 failure reason, avoiding a false pass in the pinned Promptfoo version. Summaries
 also reject saved rows with failed component assertions even if their aggregate
@@ -83,24 +82,17 @@ success flag is true. Existing saved results are not regraded or rewritten.
 These checks do not establish semantic correctness or whether the danger label
 describes the actual command.
 
-The `markdown-word` case adds nine behavioral checks: repository scope, per-file
-counting, closest-to-50% selection, empty input, no qualifying word, empty files,
-sparse frequencies (20%), unusual filenames (including newlines and leading
-hyphens), and read-only behavior. One model response is reused across all checks;
-assertions do not make additional model calls. Its command runs against tiny disposable Git
-repositories in a resource-limited Docker container, with no network, credentials,
-or working repository mounted. The image uses `strace` to detect filesystem
-mutations and write-capable opens, including temporary files removed before the
-final snapshot. Failed syscalls and opening `/dev/null` for output are allowed.
-This is a conservative write-intent check, not a complete side-effect audit
-(for example, shell variable changes are not checked).
-Rebuild with `make eval-image` to install the version 2 image.
-The grader accepts explanatory text around a single selected fixture word, but
-rejects lists of competing fixture words. Reported fractions and percentages
-must match the fixture.
-Other cases do not execute generated commands.
-Fixtures catch specific mistakes; readability and broader correctness still need
-manual review. Reported live response times exclude fixture execution.
+The `markdown-word` case also runs the generated command in a Docker container
+against two tiny disposable Git repositories: one where exactly one word is
+closest to half the Markdown files, and one with no qualifying word. Ignored
+files, non-Markdown files, occurrence counts, and a nested working directory
+each lead a careless command to a different answer. A command that exits
+nonzero, changes the repository, or names a competing word fails. One model
+response is reused across both checks. The container has no network,
+credentials, or working repository mounted. Docker and the image are checked
+before any model calls when this case is selected in a live run; smoke runs
+never use Docker. Other cases do not execute generated commands. Reported
+response times exclude fixture execution.
 
 To run just this case:
 
@@ -108,8 +100,7 @@ To run just this case:
 make eval CASES=markdown-word MODELS="gpt-6-astra@low claude-sonnet-5@low" REPEAT=3
 ```
 
-`CASES` accepts space-separated case names; omit it to run all cases. Docker and
-the fixture image are checked before any model calls when this case is selected.
+`CASES` accepts space-separated case names; omit it to run all cases.
 
 Review outputs against the case's `review` rubric in `cases.json`, including
 filename handling, side effects, and shell/OS compatibility. Examples are only
@@ -137,12 +128,10 @@ and a smoke example. Keep checks in `checks.py` and integration in `provider.py`
 ```bash
 make eval-smoke MODELS="claude-sonnet-5@low gpt-6-astra@medium"
 .venv/bin/python -m pytest evals/
-ABC_EVAL_DOCKER_TESTS=1 .venv/bin/python -m pytest evals/test_behavior.py
 ```
 
-Smoke tests use fixed responses without model calls or credentials. They test
-the framework integration, including Docker fixtures when selected, not model
-quality or API account access. Docker tests are opt-in in pytest. Mocked
+Smoke tests use fixed responses without model calls, credentials, or Docker.
+They test the framework integration, not model quality or API account access. Mocked
 request tests verify provider selection, credential selection, and effort wiring.
 
-[Created with AI: Codex with GPT-6 Astra]
+[Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1]

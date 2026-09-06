@@ -1,6 +1,6 @@
 """Summarize saved Promptfoo results without model calls.
 
-[Created with AI: Codex with GPT-6 Astra]
+[Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1]
 """
 from collections import defaultdict
 import json
@@ -38,16 +38,6 @@ def print_summary(path):
     print('Times cover completed responses, including assertion failures; scores require manual correctness review.')
     print('Cost estimates use full input/output rates without cache discounts, including reasoning tokens.')
     print('Unknown means pricing or usage is missing for at least one call; not an actual bill or retry total.')
-    for label, rows in sorted(groups.items()):
-        checks = defaultdict(list)
-        for row in rows:
-            for check in (row.get('gradingResult') or {}).get('componentResults', []):
-                name = (check.get('assertion') or {}).get('metric')
-                if name:
-                    checks[name].append(bool(check['pass']))
-        if checks:
-            print(label + ': ' + ', '.join('{} {}/{}'.format(name, sum(values), len(values))
-                                           for name, values in sorted(checks.items())))
 
 
 if __name__ == '__main__':
