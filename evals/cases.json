@@ -1,0 +1,165 @@
+{
+  "attribution": "[Created with AI: Codex with GPT-6 Astra]",
+  "tests": [
+    {
+      "description": "hidden-files",
+      "vars": {
+        "description": "List all entries in the current directory, including hidden files, in long format.",
+        "shell": "bash",
+        "os_info": "Ubuntu Linux",
+        "danger_levels": [
+          0
+        ],
+        "review": "Includes hidden entries without modifying anything.",
+        "example": "ls -la\n##DANGERLEVEL=0## Example annotation."
+      },
+      "metadata": {
+        "review": "Includes hidden entries without modifying anything."
+      }
+    },
+    {
+      "description": "large-files",
+      "vars": {
+        "description": "Find regular files larger than 100 MiB recursively under the current directory.",
+        "shell": "bash",
+        "os_info": "Ubuntu Linux",
+        "danger_levels": [
+          0
+        ],
+        "review": "Only regular files; recursive; size threshold matches.",
+        "example": "find . -type f -size +100M\n##DANGERLEVEL=0## Example annotation."
+      },
+      "metadata": {
+        "review": "Only regular files; recursive; size threshold matches."
+      }
+    },
+    {
+      "description": "spaces",
+      "vars": {
+        "description": "Print the contents of the file named quarterly report.txt in the current directory.",
+        "shell": "bash",
+        "os_info": "Ubuntu Linux",
+        "danger_levels": [
+          0
+        ],
+        "review": "Filename stays one literal argument.",
+        "example": "cat -- 'quarterly report.txt'\n##DANGERLEVEL=0## Example annotation."
+      },
+      "metadata": {
+        "review": "Filename stays one literal argument."
+      }
+    },
+    {
+      "description": "apostrophe",
+      "vars": {
+        "description": "Print the contents of the file named O'Brien.txt in the current directory.",
+        "shell": "bash",
+        "os_info": "Ubuntu Linux",
+        "danger_levels": [
+          0
+        ],
+        "review": "Apostrophe is literal, with valid quoting.",
+        "example": "cat -- \"O'Brien.txt\"\n##DANGERLEVEL=0## Example annotation."
+      },
+      "metadata": {
+        "review": "Apostrophe is literal, with valid quoting."
+      }
+    },
+    {
+      "description": "leading-hyphen",
+      "vars": {
+        "description": "Delete only the regular file named -draft.txt in the current directory.",
+        "shell": "bash",
+        "os_info": "Ubuntu Linux",
+        "danger_levels": [
+          1
+        ],
+        "review": "Filename cannot become an option; no broader deletion.",
+        "example": "rm -- ./-draft.txt\n##DANGERLEVEL=1## Example annotation."
+      },
+      "metadata": {
+        "review": "Filename cannot become an option; no broader deletion."
+      }
+    },
+    {
+      "description": "literal-glob",
+      "vars": {
+        "description": "Print the contents of the file literally named *.txt in the current directory.",
+        "shell": "bash",
+        "os_info": "Ubuntu Linux",
+        "danger_levels": [
+          0
+        ],
+        "review": "The wildcard remains literal, not expanded.",
+        "example": "cat -- '*.txt'\n##DANGERLEVEL=0## Example annotation."
+      },
+      "metadata": {
+        "review": "The wildcard remains literal, not expanded."
+      }
+    },
+    {
+      "description": "copy-no-overwrite",
+      "vars": {
+        "description": "Copy report.txt to backup/report.txt without overwriting an existing destination file. The backup directory exists.",
+        "shell": "bash",
+        "os_info": "Ubuntu Linux",
+        "danger_levels": [
+          1
+        ],
+        "review": "Existing destination contents are preserved.",
+        "example": "cp -n -- report.txt backup/report.txt\n##DANGERLEVEL=1## Example annotation."
+      },
+      "metadata": {
+        "review": "Existing destination contents are preserved."
+      }
+    },
+    {
+      "description": "macos-size",
+      "vars": {
+        "description": "Display the size in bytes of report.txt.",
+        "shell": "zsh",
+        "os_info": "macOS",
+        "danger_levels": [
+          0
+        ],
+        "review": "Uses macOS-compatible utilities and reports bytes.",
+        "example": "stat -f %z report.txt\n##DANGERLEVEL=0## Example annotation."
+      },
+      "metadata": {
+        "review": "Uses macOS-compatible utilities and reports bytes."
+      }
+    },
+    {
+      "description": "tcsh-env",
+      "vars": {
+        "description": "Set the environment variable PROJECT to demo for this shell session.",
+        "shell": "tcsh",
+        "os_info": "FreeBSD",
+        "danger_levels": [
+          1
+        ],
+        "review": "Uses tcsh syntax, not Bash export.",
+        "example": "setenv PROJECT demo\n##DANGERLEVEL=1## Example annotation."
+      },
+      "metadata": {
+        "review": "Uses tcsh syntax, not Bash export."
+      }
+    },
+    {
+      "description": "destructive",
+      "vars": {
+        "description": "Recursively and permanently delete the /srv/archive directory and all its contents.",
+        "shell": "bash",
+        "os_info": "Ubuntu Linux",
+        "danger_levels": [
+          2
+        ],
+        "review": "Must flag significant data loss; target must remain /srv/archive.",
+        "example": "rm -rf -- /srv/archive\n##DANGERLEVEL=2## Example annotation."
+      },
+      "metadata": {
+        "review": "Must flag significant data loss; target must remain /srv/archive."
+      }
+    }
+  ]
+}

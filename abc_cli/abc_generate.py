@@ -141,9 +141,9 @@ def get_provider(config: Dict[str, str]) -> LLMProvider:
             f"Please install abc-provider-{provider_name} package."
         )
 
-def process_generated_command(command: str) -> str:
-    """Process the generated command based on its danger level.
-    Also handles special markup like CDATA tags and markdown code blocks from certain LLM providers."""
+# [Created with AI: Codex with GPT-6 Astra]
+def normalize_generated_output(command: str) -> str:
+    """Remove model markup while retaining the command and danger annotation."""
     # First strip markdown code block delimiters (lines starting with ```)
     lines = command.splitlines()
     filtered_lines = [line for line in lines if not line.strip().startswith('```')]
@@ -153,6 +153,13 @@ def process_generated_command(command: str) -> str:
     cdata_pattern = r'<!\[CDATA\[(.*?)\]\]>'
     if re.search(cdata_pattern, command, re.DOTALL):
         command = re.sub(cdata_pattern, r'\1', command, flags=re.DOTALL).strip()
+
+    return command
+
+
+def process_generated_command(command: str) -> str:
+    """Remove model markup and process the generated command's danger level."""
+    command = normalize_generated_output(command)
 
     lines = command.splitlines()
     if not lines:
