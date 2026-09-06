@@ -30,3 +30,12 @@ def test_accepts_application_supported_wrappers(output):
     from abc_cli.abc_generate import process_generated_command
     assert get_assert(output, {'vars': {'shell': 'bash', 'danger_levels': [0]}})['pass']
     assert process_generated_command(output) == 'ls -la'
+
+
+def test_independent_checks():
+    from evals.checks import format_check, danger_check, quoting_check
+    output = '```bash\ncp -n a b\n```\n##DANGERLEVEL=0## Read only'
+    context = {'vars': {'shell': 'bash', 'danger_levels': [1]}}
+    assert format_check(output, context)['pass']
+    assert quoting_check(output, context)['pass']
+    assert not danger_check(output, context)['pass']

@@ -27,6 +27,16 @@ def print_summary(path):
         print('{:<36} {:>3}/{:<3} {:>7} {:>10} {:>8}'.format(
             label, passed, len(rows), errors, median, p95))
     print('Times cover completed responses, including assertion failures; scores require manual correctness review.')
+    for label, rows in sorted(groups.items()):
+        checks = defaultdict(list)
+        for row in rows:
+            for check in (row.get('gradingResult') or {}).get('componentResults', []):
+                name = (check.get('assertion') or {}).get('metric')
+                if name:
+                    checks[name].append(bool(check['pass']))
+        if checks:
+            print(label + ': ' + ', '.join('{} {}/{}'.format(name, sum(values), len(values))
+                                           for name, values in sorted(checks.items())))
 
 
 if __name__ == '__main__':

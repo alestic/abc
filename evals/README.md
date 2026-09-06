@@ -5,6 +5,7 @@ Compare models using abc's providers and system prompt:
 ```bash
 # One-time setup (.venv must exist; npm is also required).
 .venv/bin/python -m pip install -e . -e ./abc_provider_anthropic -e ./abc_provider_openai
+make eval-image # Requires Docker; builds the command fixture image once.
 
 make eval MODELS="claude-sonnet-5@low claude-sonnet-5@medium gpt-6-astra@low" REPEAT=3
 make eval-view
@@ -51,7 +52,7 @@ The application defaults outside evaluations are unchanged.
 Promptfoo 0.122.2 and Node.js 22.22.0 are pinned and downloaded through npx;
 the pinned runtime avoids a global Node upgrade. The viewer and run history are
 local, with no hosted account required. Each live run makes paid API calls:
-10 cases × model/effort combinations × repeats. Response caching is disabled.
+11 cases × model/effort combinations × repeats. Response caching is disabled.
 Normal `make test` does not run evaluations.
 
 ## Results
@@ -66,10 +67,29 @@ Results live in ignored `evals/.results/`. Live exports overwrite `latest.json`;
 smoke exports use `smoke.json`. Promptfoo retains run history in its local state
 directory. Metadata records source revision, dirty working tree, and smoke mode.
 
-Automated checks apply abc's Markdown/CDATA cleanup and check the two-line
-output contract, expected danger labels, and balanced Bash/zsh quoting. They do
-not establish semantic correctness, full shell syntax validity, or whether the
-danger label describes the actual command. Commands are never executed.
+Every response gets independent named pass/fail checks for Format, Danger,
+and Quoting after abc's Markdown/CDATA cleanup. The summary also prints pass
+counts for each check. A response passes overall only when all its checks pass.
+These structural checks do not establish semantic correctness, full shell syntax
+validity, or whether the danger label describes the actual command.
+
+The `markdown-word` case adds six behavioral checks: repository scope, per-file
+counting, closest-to-50% selection, empty input, no qualifying word, and unchanged
+fixture files. One model response is reused across all checks; assertions do not
+make additional model calls. Its command runs against tiny disposable Git
+repositories in a resource-limited Docker container, with no network, credentials,
+or working repository mounted. Other cases do not execute generated commands.
+Fixtures catch specific mistakes; readability and broader correctness still need
+manual review. Reported live response times exclude fixture execution.
+
+To run just this case:
+
+```bash
+make eval CASES=markdown-word MODELS="gpt-6-astra@low claude-sonnet-5@low" REPEAT=3
+```
+
+`CASES` accepts space-separated case names; omit it to run all cases. Docker and
+the fixture image are checked before any model calls when this case is selected.
 
 Review outputs against the case's `review` rubric in `cases.json`, including
 filename handling, side effects, and shell/OS compatibility. Examples are only
@@ -84,10 +104,12 @@ and a smoke example. Keep checks in `checks.py` and integration in `provider.py`
 ```bash
 make eval-smoke MODELS="claude-sonnet-5@low gpt-6-astra@medium"
 .venv/bin/python -m pytest evals/
+ABC_EVAL_DOCKER_TESTS=1 .venv/bin/python -m pytest evals/test_behavior.py
 ```
 
 Smoke tests use fixed responses without model calls or credentials. They test
-the framework integration, not model quality or API account access. Mocked
+the framework integration, including Docker fixtures when selected, not model
+quality or API account access. Docker tests are opt-in in pytest. Mocked
 request tests verify provider selection, credential selection, and effort wiring.
 
 [Created with AI: Codex with GPT-6 Astra]

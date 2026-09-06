@@ -3,6 +3,7 @@
 [Created with AI: Codex with GPT-6 Astra]
 """
 import os
+import re
 from pathlib import Path
 import sys
 import time
@@ -12,14 +13,19 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'abc_provider_anthropic'))
 
 from abc_cli.prompts import get_system_prompt
+from abc_cli.abc_generate import DANGER_LEVEL_PATTERN, normalize_generated_output
 sys.path.insert(0, str(ROOT / 'abc_provider_openai'))
 
 
 def call_api(prompt, options, context):
     config = options['config']
     case = context['vars']
-    if config.get('smoke'):
+    if config.get('smoke') and not case.get('behavior'):
         return {'output': case['example'], 'metadata': {'offline': True}}
+    if config.get('smoke'):
+        result = {'output': case['example'], 'metadata': {'offline': True}}
+        add_behavior(result, case)
+        return result
     name = config['provider']
     settings = {'provider': name, 'api_key': os.environ[name.upper() + '_API_KEY'],
                 'model': config['model'], 'max_tokens': str(config['max_tokens'])}
@@ -39,4 +45,18 @@ def call_api(prompt, options, context):
     started = time.monotonic()
     output = provider.generate_command(case['description'], shell_context,
                                        get_system_prompt(shell_context))
-    return {'output': output, 'latencyMs': (time.monotonic() - started) * 1000}
+    result = {'output': output, 'latencyMs': (time.monotonic() - started) * 1000,
+              'metadata': {}}
+    add_behavior(result, case)
+    return result
+
+
+def add_behavior(result, case):
+    if case.get('behavior') == 'markdown_word' and 'output' in result:
+        from evals.behavior import evaluate
+        lines = normalize_generated_output(result['output']).splitlines()
+        if len(lines) < 2 or not re.fullmatch(DANGER_LEVEL_PATTERN, lines[-1]):
+            result['metadata']['behavior'] = {'error': 'Cannot extract command: missing danger annotation'}
+            return
+        command = '\n'.join(lines[:-1])
+        result['metadata']['behavior'] = evaluate(command)
