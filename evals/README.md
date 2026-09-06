@@ -35,7 +35,7 @@ and [OpenAI model catalog](https://developers.openai.com/api/docs/models).
 Environment keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) take priority. Otherwise,
 abc's normal config discovery (`ABC_CONFIG`, XDG, or legacy path) is used.
 The first section matching the provider, in file order, supplies the key.
-Sections without a provider follow abc's default of Anthropic.
+Sections without a provider follow abc's default of OpenAI.
 
 - Claude: override section selection with `ABC_SECTION=name`.
 - GPT: override section selection with `ABC_OPENAI_SECTION=name`.

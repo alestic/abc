@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abc-provider-openai"
-version = "2026.09.06"
+version = "2026.09.06.1"
 description = "OpenAI LLM provider for abc-cli"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -30,3 +30,5 @@ addopts = "-v --cov=abc_provider_openai"
 
 [project.entry-points."abc.llm_providers"]
 openai = "abc_provider_openai.llm_provider:OpenAIProvider"
+
+# [Created with AI: Codex with GPT-6 Astra]
