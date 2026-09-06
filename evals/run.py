@@ -86,6 +86,19 @@ def main():
         parser.error('MODELS must be nonempty and REPEAT must be positive')
     if len(set(models)) != len(models):
         parser.error('MODELS must not repeat an entry; use REPEAT to measure run-to-run variance')
+    cases = json.loads((ROOT / 'cases.json').read_text())
+    selected = os.environ.get('CASES', '').split()
+    if selected:
+        names = {case['description'] for case in cases['tests']}
+        if set(selected) - names:
+            parser.error('Unknown CASES: ' + ', '.join(sorted(set(selected) - names)))
+        cases['tests'] = [case for case in cases['tests'] if case['description'] in selected]
+    if any(case['vars'].get('behavior') for case in cases['tests']):
+        from evals.behavior import check_available
+        try:
+            check_available()
+        except ValueError as error:
+            parser.error(str(error))
     if not args.smoke:
         for provider in sorted({item['provider'] for item in combinations}):
             try:
@@ -93,7 +106,12 @@ def main():
             except (OSError, configparser.Error, ValueError):
                 parser.error('Could not load ' + provider + ' key. Check abc config sections '
                              'or set ' + provider.upper() + '_API_KEY.')
-    cases = json.loads((ROOT / 'cases.json').read_text())
+    for case in cases['tests']:
+        if case['vars'].get('behavior'):
+            case['assert'] = [{'type': 'python', 'metric': 'Word ' + name,
+                              'value': 'file://' + str(ROOT / 'checks.py') + ':behavior_check',
+                              'config': {'check': name}}
+                             for name in ('scope', 'counting', 'selection', 'empty', 'no_candidate', 'read_only')]
     config = {
         'description': 'abc model comparison: automated checks plus manual correctness review',
         'metadata': {'sourceRevision': subprocess.check_output(
@@ -106,7 +124,11 @@ def main():
                        'config': dict(combination, smoke=args.smoke, max_tokens=max_tokens)}
                       for model, combination in zip(models, combinations)],
         'tests': cases['tests'],
-        'defaultTest': {'assert': [{'type': 'python', 'value': 'file://' + str(ROOT / 'checks.py')}]},
+        'defaultTest': {'assert': [{'type': 'python', 'metric': name,
+                                   'value': 'file://' + str(ROOT / 'checks.py') + ':' + function}
+                                  for name, function in [('Format', 'format_check'),
+                                                         ('Danger', 'danger_check'),
+                                                         ('Quoting', 'quoting_check')]]},
     }
     results = ROOT / '.results'
     results.mkdir(exist_ok=True)
