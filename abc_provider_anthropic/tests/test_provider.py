@@ -54,7 +54,7 @@ def test_init_full_config():
 def test_init_missing_api_key():
     """Test provider initialization fails without API key."""
     with pytest.raises(KeyError):
-        AnthropicProvider({})
+        AnthropicProvider({"provider": "anthropic"})
 
 def test_get_config_schema():
     """Test config schema is valid and complete."""

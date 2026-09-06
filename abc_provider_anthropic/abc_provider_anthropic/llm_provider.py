@@ -5,7 +5,7 @@ from typing import Dict, Any
 
 from abc_cli import LLMProvider
 
-DEFAULT_MODEL = 'claude-opus-4-8'
+DEFAULT_MODEL = 'claude-opus-4-5'
 DEFAULT_MAX_TOKENS = 1000
 
 class AnthropicProvider(LLMProvider):
