@@ -36,7 +36,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abc-provider-NAME"
-version = "2026.09.06"  # Match abc-cli version format
+version = "2026.09.06.1"  # Match abc-cli version format
 description = "NAME LLM provider for abc-cli"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -177,3 +177,5 @@ model = specific-model
 ## Example
 
 See [abc_provider_anthropic](abc_provider_anthropic/) for a complete example of a provider implementation.
+
+<!-- [Created with AI: Codex with GPT-6 Astra] -->

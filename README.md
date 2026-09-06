@@ -97,13 +97,18 @@ The program will attempt to read the config file from the first of these values 
 3. $XDG_CONFIG_HOME/abc/config (defaults to ~/.config/abc/config)
 4. ~/.abc.conf (legacy, will be removed in a future version)
 
+New installations use OpenAI `gpt-6-astra` with low reasoning effort. Every
+configuration section must name its `provider`, and an explicit `model` setting
+overrides the provider default.
+
 Configuration sections allow using different LLM providers and models:
 
 ```ini
 [default]
-provider = anthropic
-api_key = {ANTHROPIC_API_KEY}
-model = claude-sonnet-4-0
+provider = openai
+api_key = {OPENAI_API_KEY}
+model = gpt-6-astra
+reasoning_effort = low
 
 [4o]  # GPT-4o config
 provider = openai
@@ -118,7 +123,7 @@ model = gpt-5
 
 Use different configurations with the --use option:
 ```bash
-# Use default (Anthropic Claude)
+# Use default (OpenAI Astra, low reasoning effort)
 abc "list files by size"
 
 # Use GPT-4o config
@@ -328,4 +333,6 @@ Prompt crafting by Eric Hammond
 
 ## Version
 
-Current version: 2026.09.06
+Current version: 2026.09.06.1
+
+<!-- [Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1] -->

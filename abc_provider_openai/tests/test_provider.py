@@ -1,6 +1,6 @@
 """Tests for the OpenAI LLM provider.
 
-[Created by AI: Claude Code]
+[Created by AI: Claude Code, Codex with GPT-6 Astra, Claude Code with Fable 5.1]
 """
 
 import pytest
@@ -45,10 +45,16 @@ def test_init_minimal_config():
     """Test provider initialization with minimal config."""
     provider = OpenAIProvider(MOCK_CONFIG)
     assert provider.api_key == MOCK_API_KEY
-    assert provider.model == DEFAULT_MODEL
+    assert provider.model == DEFAULT_MODEL == "gpt-6-astra"
+    assert provider.reasoning_effort == "low"
     assert provider.temperature == 0.0
-    assert provider.max_tokens == 1000
+    assert provider.max_tokens == 4096
     assert provider.timeout == 120.0
+
+def test_init_dated_astra_defaults_to_low_effort():
+    """Every gpt-6 model ID gets the low effort default, not only the bare name."""
+    config = dict(MOCK_CONFIG, model="gpt-6-astra-2026-09-01")
+    assert OpenAIProvider(config).reasoning_effort == "low"
 
 def test_init_full_config():
     """Test provider initialization with full config."""
@@ -59,6 +65,18 @@ def test_init_full_config():
     assert provider.max_tokens == 500
     assert provider.timeout == 60.0
     assert provider.organization == "test_org"
+
+
+@pytest.mark.parametrize('config,effort', [
+    ({'model': 'gpt-5'}, 'minimal'),
+    ({'model': 'gpt-4o'}, None),
+    ({'reasoning_effort': 'medium'}, 'medium'),
+    ({'reasoning_effort': ''}, ''),
+])
+def test_preserves_model_and_effort_overrides(config, effort):
+    provider = OpenAIProvider(dict(MOCK_CONFIG, **config))
+    assert provider.model == config.get('model', 'gpt-6-astra')
+    assert provider.reasoning_effort == effort
 
 def test_init_missing_api_key():
     """Test provider initialization fails without API key."""
@@ -110,6 +128,7 @@ def test_generate_command(mock_openai):
     mock_client.chat.completions.create.assert_called_once()
     call_kwargs = mock_client.chat.completions.create.call_args.kwargs
     assert call_kwargs["model"] == DEFAULT_MODEL
+    assert call_kwargs["reasoning_effort"] == "low"
     assert len(call_kwargs["messages"]) == 2
     assert call_kwargs["messages"][0]["role"] == "system"
     assert call_kwargs["messages"][0]["content"] == "You are a CLI assistant"

@@ -5,7 +5,7 @@ Compare models using abc's providers and system prompt:
 ```bash
 # One-time setup (.venv must exist; npm is also required).
 .venv/bin/python -m pip install -e . -e ./abc_provider_anthropic -e ./abc_provider_openai
-make eval-image # Requires Docker; builds the command fixture image once.
+make eval-image # One-time setup; requires Docker.
 
 make eval MODELS="claude-sonnet-5@low claude-sonnet-5@medium gpt-6-astra@low" REPEAT=3
 make eval-view
@@ -35,7 +35,7 @@ and [OpenAI model catalog](https://developers.openai.com/api/docs/models).
 Environment keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) take priority. Otherwise,
 abc's normal config discovery (`ABC_CONFIG`, XDG, or legacy path) is used.
 The first section matching the provider, in file order, supplies the key.
-Sections without a provider follow abc's default of Anthropic.
+Sections without a provider follow abc's default of OpenAI.
 
 - Claude: override section selection with `ABC_SECTION=name`.
 - GPT: override section selection with `ABC_OPENAI_SECTION=name`.
@@ -53,11 +53,13 @@ Promptfoo 0.122.2 and Node.js 22.22.0 are pinned and downloaded through npx;
 the pinned runtime avoids a global Node upgrade. The viewer and run history are
 local, with no hosted account required. Each live run makes paid API calls:
 11 cases × model/effort combinations × repeats. Response caching is disabled.
-Normal `make test` does not run evaluations.
+Normal `make test` does not run evaluations. Run offline evaluator regression tests
+with `.venv/bin/python -m pytest evals/`; these make no model calls.
 
 ## Results
 
-The runner prints pass counts, error counts, median response time, and p95 after
+The runner prints pass counts, error counts, median response time, p95, and
+estimated uncached USD cost per call and total after
 each completed run. `make eval-summary` prints the saved summary without calls.
 Times cover completed provider calls, including responses that fail assertions;
 API errors are counted separately. These are full-response times, not time to
@@ -67,34 +69,60 @@ Results live in ignored `evals/.results/`. Live exports overwrite `latest.json`;
 smoke exports use `smoke.json`. Promptfoo retains run history in its local state
 directory. Metadata records source revision, dirty working tree, and smoke mode.
 
-Every response gets independent named pass/fail checks for Format, Danger,
-and Quoting after abc's Markdown/CDATA cleanup. The summary also prints pass
-counts for each check. A response passes overall only when all its checks pass.
-These structural checks do not establish semantic correctness, full shell syntax
-validity, or whether the danger label describes the actual command.
+Every response gets independent pass/fail checks for Format, Danger, and
+Quoting after abc's Markdown/CDATA cleanup. For Bash, Quoting runs `bash -n`
+with startup environment variables removed: it checks shell syntax without
+executing the generated command. Zsh retains a limited `shlex` quoting check;
+tcsh syntax is not validated. A response passes overall only when all its
+checks pass.
+The runner sets an aggregate threshold of 1 and always supplies a nonempty
+failure reason, avoiding a false pass in the pinned Promptfoo version. Summaries
+also reject saved rows with failed component assertions even if their aggregate
+success flag is true. Existing saved results are not regraded or rewritten.
+These checks do not establish semantic correctness or whether the danger label
+describes the actual command.
 
-The `markdown-word` case adds six behavioral checks: repository scope, per-file
-counting, closest-to-50% selection, empty input, no qualifying word, and unchanged
-fixture files. One model response is reused across all checks; assertions do not
-make additional model calls. Its command runs against tiny disposable Git
-repositories in a resource-limited Docker container, with no network, credentials,
-or working repository mounted. Other cases do not execute generated commands.
-Fixtures catch specific mistakes; readability and broader correctness still need
-manual review. Reported live response times exclude fixture execution.
+The `markdown-word` case also runs the generated command in a Docker container
+against two tiny disposable Git repositories: one where exactly one word is
+closest to half the Markdown files, and one with no qualifying word. Ignored
+files, non-Markdown files, occurrence counts, and a nested working directory
+each lead a careless command to a different answer. A command that exits
+nonzero, changes the repository, or names a competing word fails. One model
+response is reused across both checks. The container has no network,
+credentials, or working repository mounted. Docker and the image are checked
+before any model calls when this case is selected in a live run; smoke runs
+never use Docker. Other cases do not execute generated commands. Reported
+response times exclude fixture execution.
 
 To run just this case:
 
 ```bash
+make eval-image # One-time setup; requires Docker.
 make eval CASES=markdown-word MODELS="gpt-6-astra@low claude-sonnet-5@low" REPEAT=3
 ```
 
-`CASES` accepts space-separated case names; omit it to run all cases. Docker and
-the fixture image are checked before any model calls when this case is selected.
+`CASES` accepts space-separated case names; omit it to run all eleven cases,
+including the Docker execution test.
 
 Review outputs against the case's `review` rubric in `cases.json`, including
 filename handling, side effects, and shell/OS compatibility. Examples are only
 for offline smoke tests, not exact-match answers, and are not sent to models.
-Token usage and cost are not reported because abc's providers return only text.
+Input/output token counts and uncached cost estimates are saved with each
+response. Reasoning tokens are included in output usage, not added twice.
+All cached input is priced at the normal input rate to represent infrequent
+abc usage. Estimates are not actual billed costs; retries and account-specific
+discounts are not included. A model's cost summary is unknown if any call lacks
+pricing or usage, rather than silently reporting a partial total.
+
+Each live run downloads the [LiteLLM pricing catalog](https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json)
+once. Selected rates, source URL, retrieval time, and catalog hash are saved in
+a timestamped `pricing-*.json` file and embedded in the run metadata. Prices
+are standard rates with no caching, batch, or priority adjustment. This
+third-party catalog may lag official pricing. Calls requiring long-context
+tiers or distinct reasoning-token rates show unknown; only standard input/output
+rates are calculated. Missing prices or a failed
+download leave cost unknown while evaluations continue. Smoke tests do not
+download pricing. Earlier results without token usage cannot be costed retroactively.
 
 ## Maintenance
 
@@ -104,12 +132,10 @@ and a smoke example. Keep checks in `checks.py` and integration in `provider.py`
 ```bash
 make eval-smoke MODELS="claude-sonnet-5@low gpt-6-astra@medium"
 .venv/bin/python -m pytest evals/
-ABC_EVAL_DOCKER_TESTS=1 .venv/bin/python -m pytest evals/test_behavior.py
 ```
 
-Smoke tests use fixed responses without model calls or credentials. They test
-the framework integration, including Docker fixtures when selected, not model
-quality or API account access. Docker tests are opt-in in pytest. Mocked
+Smoke tests use fixed responses without model calls, credentials, or Docker.
+They test the framework integration, not model quality or API account access. Mocked
 request tests verify provider selection, credential selection, and effort wiring.
 
-[Created with AI: Codex with GPT-6 Astra]
+[Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1]

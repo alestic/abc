@@ -29,12 +29,11 @@ from .prompts import get_system_prompt
 # Entry point group for LLM providers
 PROVIDER_ENTRY_POINT = 'abc.llm_providers'
 
-VERSION: str = "abc (AI Bash Command) version 2026.09.06"
+VERSION: str = "abc (AI Bash Command) version 2026.09.06.1"
 PROGRAM_NAME: str = "abc"
 
 # Config file
 DEFAULT_CONFIG_SECTION: str = 'default'
-DEFAULT_PROVIDER: str = 'anthropic'
 
 # Log format
 LOG_FORMAT: str = f'%(asctime)s [{PROGRAM_NAME}] [%(levelname)s] %(message)s'
@@ -115,10 +114,11 @@ def get_config(config_file_path: str, section: str = DEFAULT_CONFIG_SECTION) -> 
 def get_provider(config: Dict[str, str]) -> LLMProvider:
     """Get the configured LLM provider."""
     if 'provider' not in config:
-        # Default to anthropic for backward compatibility
-        provider_name = DEFAULT_PROVIDER
-    else:
-        provider_name = config['provider']
+        raise ValueError(
+            "Config section has no 'provider' setting. "
+            "Add 'provider = openai' or 'provider = anthropic' to the section."
+        )
+    provider_name = config['provider']
 
     try:
         # Handle both old (pre-3.10) and new entry_points API
@@ -141,7 +141,7 @@ def get_provider(config: Dict[str, str]) -> LLMProvider:
             f"Please install abc-provider-{provider_name} package."
         )
 
-# [Created with AI: Codex with GPT-6 Astra]
+# [Created with AI: Codex with GPT-6 Astra, Claude Code with Fable 5.1]
 def normalize_generated_output(command: str) -> str:
     """Remove model markup while retaining the command and danger annotation."""
     # First strip markdown code block delimiters (lines starting with ```)

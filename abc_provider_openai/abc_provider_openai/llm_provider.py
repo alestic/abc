@@ -1,6 +1,6 @@
 """OpenAI LLM provider implementation.
 
-[Created by AI: Claude Code, Codex with GPT-6 Astra]
+[Created by AI: Claude Code, Codex with GPT-6 Astra, Claude Code with Fable 5.1]
 """
 
 import openai
@@ -8,11 +8,11 @@ from typing import Dict, Any
 
 from abc_cli import LLMProvider
 
-DEFAULT_MODEL = 'gpt-5'
+DEFAULT_MODEL = 'gpt-6-astra'
 DEFAULT_TEMPERATURE = 0.0
-DEFAULT_MAX_TOKENS = 1000
+DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TIMEOUT = 120
-DEFAULT_REASONING_EFFORT = 'minimal'  # Minimize reasoning tokens for simple command generation
+DEFAULT_REASONING_EFFORT = 'low'
 
 class OpenAIProvider(LLMProvider):
     """OpenAI LLM provider."""
@@ -31,14 +31,17 @@ class OpenAIProvider(LLMProvider):
         self.temperature = float(config.get('temperature', DEFAULT_TEMPERATURE))
         self.max_tokens = int(config.get('max_tokens', DEFAULT_MAX_TOKENS))
         self.timeout = float(config.get('timeout', DEFAULT_TIMEOUT))
+        self.last_usage = None
         self.api = config.get('api', 'chat_completions')
         if self.api not in ('chat_completions', 'responses'):
             raise ValueError('api must be chat_completions or responses')
-        # A configured effort is always sent. Without one, GPT-5 models get the
-        # low-cost default; other models are left at the server default.
+        # An explicit reasoning_effort wins; otherwise the model family sets it.
         self.reasoning_effort = config.get('reasoning_effort')
-        if self.reasoning_effort is None and 'gpt-5' in self.model.lower():
-            self.reasoning_effort = DEFAULT_REASONING_EFFORT
+        if self.reasoning_effort is None:
+            if self.model.lower().startswith('gpt-6'):
+                self.reasoning_effort = DEFAULT_REASONING_EFFORT
+            elif 'gpt-5' in self.model.lower():
+                self.reasoning_effort = 'minimal'
         
         # Optional organization ID
         self.organization = config.get('organization')
@@ -61,6 +64,7 @@ class OpenAIProvider(LLMProvider):
         system_prompt: str,
     ) -> str:
         """Generate command using OpenAI GPT models."""
+        self.last_usage = None
         try:
             if self.api == 'responses':
                 params = {
@@ -75,6 +79,7 @@ class OpenAIProvider(LLMProvider):
                 if self.temperature != 0.0:
                     params['temperature'] = self.temperature
                 response = self.client.responses.create(**params)
+                self.last_usage = response.usage
                 if response.status != 'completed':
                     raise ValueError('OpenAI response did not complete; check max_tokens and model settings')
                 if not response.output_text.strip():
@@ -104,6 +109,7 @@ class OpenAIProvider(LLMProvider):
                 request_params["temperature"] = self.temperature
                 
             response = self.client.chat.completions.create(**request_params)
+            self.last_usage = response.usage
             
             # Debug logging
             import logging
@@ -146,7 +152,7 @@ class OpenAIProvider(LLMProvider):
                     "type": "string",
                     "description": "OpenAI model to use",
                     "default": DEFAULT_MODEL,
-                    "examples": ["gpt-5", "gpt-4o", "gpt-4-turbo"]
+                    "examples": ["gpt-6-astra", "gpt-5", "gpt-4o"]
                 },
                 "temperature": {
                     "type": "string",
@@ -169,7 +175,7 @@ class OpenAIProvider(LLMProvider):
                 },
                 "reasoning_effort": {
                     "type": "string",
-                    "description": "Reasoning effort, sent whenever set (defaults to minimal for GPT-5 models; set empty for the API default)",
+                    "description": "Reasoning effort, sent whenever set (defaults to low for Astra, minimal for GPT-5 models; set empty for the API default)",
                     "default": DEFAULT_REASONING_EFFORT,
                     "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max"]
                 },

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abc-cli"
-version = "2026.09.06"
+version = "2026.09.06.1"
 description = "AI bash/zsh/tcsh Command"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -76,3 +76,5 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+# [Created with AI: Codex with GPT-6 Astra]
