@@ -16,7 +16,7 @@
         # Build the core abc-cli package
         abc-cli = python.pkgs.buildPythonApplication rec {
           pname = "abc-cli";
-          version = "2026.09.06.1";
+          version = "2026.09.06.2";
           format = "pyproject";
 
           src = ./.;
@@ -55,7 +55,7 @@
         # Build provider packages
         abc-provider-anthropic = python.pkgs.buildPythonPackage rec {
           pname = "abc-provider-anthropic";
-          version = "2026.09.06.1";
+          version = "2026.09.06.2";
           format = "pyproject";
 
           src = ./abc_provider_anthropic;
@@ -75,7 +75,7 @@
         # [Created with AI: Codex with GPT-6 Astra]
         abc-provider-openai = python.pkgs.buildPythonPackage rec {
           pname = "abc-provider-openai";
-          version = "2026.09.06.1";
+          version = "2026.09.06.2";
           format = "pyproject";
           src = ./abc_provider_openai;
           nativeBuildInputs = with python.pkgs; [ hatchling ];
@@ -85,7 +85,7 @@
 
         abc-provider-aws-bedrock = python.pkgs.buildPythonPackage rec {
           pname = "abc-provider-aws-bedrock";
-          version = "2026.09.06.1";
+          version = "2026.09.06.2";
           format = "pyproject";
 
           src = ./abc_provider_aws_bedrock;
